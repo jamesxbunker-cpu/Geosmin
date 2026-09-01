@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Creating Your Own Website via GitHub Pages | James Bunker</title>
+
+<meta name="description"
+      content="A practical guide to creating a personal website using GitHub Pages and a custom domain, including DNS, DNS records, HTTPS, and deployment.">
+
+<meta name="author" content="James Bunker">
+
+<meta name="keywords"
+      content="GitHub Pages, custom domain, DNS, website, GitHub, web development, HTTPS">
+
+<link rel="canonical" href="https://geosmin.ca/blog/github-pages-website">
+
+<style>
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 1.7;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #222;
+        background: #fff;
+    }
+
+    header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    h1 {
+        font-size: 2.4rem;
+        margin-bottom: 10px;
+    }
+
+    h2 {
+        margin-top: 50px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    h3 {
+        margin-top: 35px;
+    }
+
+    .subtitle {
+        font-size: 1.15rem;
+        color: #555;
+        margin-bottom: 15px;
+    }
+
+    .metadata {
+        color: #777;
+        font-size: 0.95rem;
+    }
+
+    hr {
+        border: 0;
+        border-top: 1px solid #ccc;
+        margin: 30px 0;
+    }
+
+    pre {
+        background: #f4f4f4;
+        padding: 20px;
+        overflow-x: auto;
+        border-radius: 6px;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 0.9rem;
+    }
+
+    code {
+        font-family: Consolas, Monaco, monospace;
+        background: #f4f4f4;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+
+    figure {
+        margin: 30px 0;
+        text-align: center;
+    }
+
+    figure img {
+        max-width: 80%;
+        height: auto;
+    }
+
+    figcaption {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 8px;
+    }
+
+    a {
+        color: #0645ad;
+    }
+
+    .intro {
+        font-size: 1.05rem;
+    }
+</style>
+
+
+</head>
+
+<body>
+
+<header>
+    <h1>Creating Your Own Website via GitHub Pages</h1>
+
+
+<p class="subtitle">
+    This will document the process of setting up a simple website
+    using GitHub Pages and your own domain.
+</p>
+
+<p class="metadata">
+    August 30, 2026 &nbsp; | &nbsp; Web Development
+</p>
+
+
+</header>
+
+<hr>
+
+<main>
+
+<section>
+    <h2>Introduction</h2>
+
+
+<p class="intro">
+    Every young developer wants to have their own domain, opening
+    the limitless possibilities of the World Wide Web and all it
+    entails. This is your chance to leave your permanent mark on
+    the internet and be able to access it from virtually anywhere
+    (as long as you keep paying your domain fees and GitHub Pages
+    doesn't stop supporting free use).
+</p>
+
+<p>
+    Grab your credit card, reading glasses, a funny website name,
+    and we're off to the races!
+</p>
+
+
+</section>
+
+<section>
+    <h2>Background</h2>
+
+
+<p>
+    Feel free to skip this if you don't care for the more technical
+    side. It merely provides a quick explanation of what's going on
+    and unravels a bit of the mystery behind these services.
+</p>
+
+<h3>Domains and DNS</h3>
+
+<p>
+    To start simple, a domain is something you have likely heard of,
+    especially if you're wanting to create your own website. This is
+    the address of your site that people will type into their browsers.
+    A domain is associated with an IP address, which allows internet
+    infrastructure to determine where requests for that domain should
+    be sent.
+</p>
+
+<p>
+    To put it simply, it's like a phone book, where the company name
+    is the domain name and the cell phone number is the IP address
+    associated with it. We use IP addresses when working with web
+    infrastructure because it would be pretty costly to send the
+    information for
+    <em>"James' Super Fantastic Website That for Some Reason Has a Long Name"</em>
+    rather than <code>39.85.184.171</code>.
+</p>
+
+<p>
+    Continuing on, DNS (Domain Name System) is the system responsible
+    for translating domain names into IP addresses and directing
+    internet requests to the appropriate destination. The DNS records
+    for your domain are managed through your domain registrar or
+    another DNS provider.
+</p>
+
+<p>
+    That's about all we need to know for this going forward, so I'll
+    leave it at that. There will likely be a future article delving
+    deeper into DNS when I have time.
+</p>
+
+
+<h3>DNS Records</h3>
+
+<p>
+    This section is more so you aren't blindly following the steps and
+    later struggling to sleep because you have no idea what the man on
+    the internet was actually telling you to do...
+</p>
+
+<p>
+    Don't worry, we will cover all the changes that will be made to
+    the DNS records here. While I will show you what to do later,
+    I'm going to briefly go into some detail on what records will be
+    changed and what they do.
+</p>
+
+<ul>
+    <li>
+        <code>@ IN 14440 A 185.199.108.153</code>
+
+        <p>
+            The A record, and the ones similar to it, are used to
+            associate a domain with an IPv4 address. We will use four
+            of these because GitHub provides multiple IP addresses for
+            GitHub Pages. This provides redundancy in case one of the
+            servers becomes unavailable.
+        </p>
+
+        <p>
+            The <code>@</code> symbol represents the root, or apex,
+            domain. In this case, it refers to
+            <code>yourwebsite.ca</code>, rather than a specific
+            subdomain such as <code>www.yourwebsite.ca</code>.
+        </p>
+    </li>
+
+    <li>
+        <code>www IN 300 CNAME your_github_account.github.io.</code>
+
+        <p>
+            Our site will be hosted with GitHub Pages, and GitHub
+            provides a hostname based on your account name:
+            <code>your_github_account.github.io</code>.
+        </p>
+
+        <p>
+            The Canonical Name, or CNAME, record allows the
+            <code>www</code> subdomain to point to your GitHub Pages
+            site instead of directly specifying an IP address.
+        </p>
+
+        <p>
+            The <code>www</code> means that the visitor entered
+            <code>www.yoursite.ca</code>, while the <code>300</code>
+            represents the DNS record's TTL (Time to Live), which
+            specifies how long DNS resolvers may cache the record.
+        </p>
+    </li>
+</ul>
+
+
+<h3>GitHub Pages</h3>
+
+<p>
+    This section is very important for anyone who wants a free way
+    to host a website. GitHub Pages directly serves the static files
+    that make up your site. If a user requests <code>index.html</code>,
+    GitHub Pages serves it. There is no server-side application
+    running behind the scenes to generate the page on demand.
+</p>
+
+<p>
+    It is important to note that GitHub Pages also provides HTTPS
+    support and automatically manages the SSL/TLS certificate for
+    your custom domain. This is normally a huge headache to deal
+    with, but I can cover that in the future. All you need to know
+    is that it saves us a huge hassle and secures our site for free.
+</p>
+
+<p>
+    It is very wise to understand that nothing comes for free and
+    big data does collect. In our case, the drawbacks are few and
+    far between, as this is just a simple website.
+</p>
+
+<p>
+    First, your repository must be public if you're using the free
+    version of GitHub Pages. This means your glorious and expertly
+    crafted site's source code is available for anyone to inspect
+    and potentially copy.
+</p>
+
+<p>
+    Though, now that I say it out loud, this isn't really an issue
+    in itself because you can more or less access all the code
+    running on any website anyway. It runs from your very own browser!
+</p>
+
+<p>
+    The main drawback is that GitHub Pages is very much a
+    <em>you-get-what-you-get</em> hosting service. It primarily serves
+    static files requested by the end user. That means you don't get
+    your own backend server constantly running programs, databases,
+    analytics services, or whatever fancy programs developers have
+    nowadays.
+</p>
+
+
+</section>
+
+<section>
+    <h2>Getting Your Domain</h2>
+
+
+<p>
+    Now this is the first, and likely easiest, step. Find a name you
+    like and go to any domain registrar. I used
+    <a href="https://www.webhostingcanada.com/" target="_blank"
+       rel="noopener noreferrer">Web Hosting Canada</a>
+    and grabbed a name I liked.
+</p>
+
+<p>
+    Since this is for a smaller-scale site, you don't need to pay
+    for additional domain protection features unless you specifically
+    want them. Additionally, you certainly don't need to pay for any
+    hosting services they may provide, otherwise you wouldn't be here!
+</p>
+
+<p>
+    This should run you back roughly $10 to $20 CAD a year, depending
+    on what domain you grab. I like to get <code>.ca</code> domains
+    because, in my unbiased opinion, (Ca)nada is fantastic, and this
+    has nothing to do with where I spent my whole life...
+</p>
+
+<p>
+    Anyways, once you've paid, it may take a bit of time for everything
+    to process. Your registrar should have a website that tells you
+    the status and lets you manage the domain.
+</p>
+
+<p>
+    This will be important later in this article, as well as whenever
+    you potentially want to manage your site in the future, so
+    <strong>WRITE THAT DOWN.</strong>
+</p>
+
+<p>
+    It took a couple of hours for my site to be registered and
+    accessible from the World Wide Web. Don't panic if it takes a day
+    or two, and this is why it is the first step in the process.
+</p>
+
+<figure>
+    <img src="figures/webhostingcanada.png"
+         alt="Web Hosting Canada domain management dashboard">
+    <figcaption>
+        The dashboard I see for my domain registrar service.
+    </figcaption>
+</figure>
+
+<p>
+    Now you should see a tab called <strong>DNS Editor Zone</strong>
+    under the settings. Remember that for later! We will be tinkering
+    around here eventually, but let's put a pin in this and hop over
+    to GitHub Pages.
+</p>
+
+
+</section>
+
+<section>
+    <h2>GitHub Pages</h2>
+
+
+<p>
+    Now I'm going to assume you have some experience or have hopefully
+    at least touched GitHub before. If not, don't worry. I'll see you
+    in 10 minutes after you watch a crash-course video!!
+</p>
+
+<p>
+    Welcome back! Now that you have an account and have learned all
+    the advanced techniques of GitHub, we can begin.
+</p>
+
+<p>
+    Step 1: Create a GitHub repository.
+</p>
+
+<p>
+    Step 2: Create a file named <code>index.html</code> and add the
+    following code:
+</p>
+
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;My Precious Site&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+    &lt;h1&gt;Under Construction&lt;/h1&gt;
+    &lt;p&gt;:)&lt;/p&gt;
+    &lt;p&gt;ahathisguyblindlypastedcodegottem&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+
+<p>
+    This will allow a very basic website to be displayed. This is
+    the file you will edit in the future, or you can create additional
+    files once you get the hang of web design.
+</p>
+
+<p>
+    CSS and JavaScript files can be added too, but that is a
+    conversation for another day.
+</p>
+
+<p>
+    Next, we will delve into Pages. To do this, press the
+    <strong>Settings</strong> button for the repository—the one in
+    the top bar. There is more than one gear icon, so watch it!
+</p>
+
+<p>
+    Now click on <strong>Pages</strong>, and that will take you to the
+    area we're interested in. You can see below what it looks like.
+</p>
+
+<figure>
+    <img src="figures/github_pages.png"
+         alt="GitHub Pages settings">
+    <figcaption>GitHub Pages settings.</figcaption>
+</figure>
+
+<p>
+    Under <strong>Source</strong>, select <strong>Deploy from a branch</strong>
+    and choose the root folder of the main branch. This is telling
+    GitHub where you want to store the files for your site.
+</p>
+
+<p>
+    Now enter your domain name into the <strong>Custom domain</strong>
+    block. This tells GitHub Pages which domain should be associated
+    with your site.
+</p>
+
+<p>
+    Do not be alarmed if you have errors at this point. We are not
+    finished, and it can take GitHub and your registrar a bit of time
+    to configure everything once we do finish.
+</p>
+
+<p>
+    This wraps up the GitHub Pages portion for the time being, but
+    we will be back at the end to finish it off.
+</p>
+
+
+</section>
+
+<section>
+    <h2>DNS Editing</h2>
+
+
+<p>
+    Now navigate to the DNS editing region on your registrar's
+    website. Here we will change some things so DNS knows to point
+    our domain to the GitHub Pages servers.
+</p>
+
+<p>
+    We are going to add the following records:
+</p>
+
+
+<pre><code>@ IN 14440 A 185.199.108.153
+@ IN 14440 A 185.199.109.153
+@ IN 14440 A 185.199.110.153
+@ IN 14440 A 185.199.111.153
+
+www IN 300 CNAME yourgithubusername.github.io.</code></pre>
+
+
+<p>
+    Now save this, and that wraps up the DNS editing portion.
+    You are now a master hacker with 5+ years of web experience.
+    Congrats!
+</p>
+
+<p>
+    My records look like this, and there are a bunch that either
+    your registrar provides for you or that you might be using for
+    other projects.
+</p>
+
+<figure>
+    <img src="figures/dnsediting.png"
+         alt="DNS records configured for GitHub Pages">
+    <figcaption>DNS records.</figcaption>
+</figure>
+
+
+</section>
+
+<section>
+    <h2>Finishing Pages</h2>
+
+
+<p>
+    Now back to Pages we go, and to that same settings screen as
+    before.
+</p>
+
+<p>
+    You should now see that your site is live and that the DNS check
+    succeeds. Enable <strong>Enforce HTTPS</strong>, and you are all
+    set.
+</p>
+
+<p>
+    Now, the DNS check may fail if you just got the domain or
+    configured everything right now, so give it some time.
+</p>
+
+<p>
+    Also, if you enable HTTPS, it can take some time for the
+    certificate to be generated. Your site may temporarily be
+    unavailable while GitHub finishes configuring HTTPS.
+</p>
+
+<figure>
+    <img src="figures/pagesfinish.png"
+         alt="GitHub Pages final configuration showing HTTPS">
+    <figcaption>Final GitHub Pages configuration.</figcaption>
+</figure>
+
+
+</section>
+
+<section>
+    <h2>Wrapping Up</h2>
+
+
+<p>
+    Congratulations, you have a domain and a place to create web stuff!
+</p>
+
+</section>
+
+<section>
+    <h2>Links</h2>
+
+
+<ul>
+    <li>
+        Project repository:
+        <a href="https://github.com/jamesxbunker-cpu/Geosmin"
+           target="_blank"
+           rel="noopener noreferrer">
+            GitHub Repository
+        </a>
+    </li>
+
+    <li>
+        Related project:
+        <a href="https://geosmin.ca/projects">
+            geosmin.ca/projects
+        </a>
+    </li>
+</ul>
+
+
+</section>
+
+</main>
+
+</body>
+</html>
