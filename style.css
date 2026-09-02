@@ -1,0 +1,76 @@
+/* ----- Simple block-style header (only for your exact classes) ----- */
+
+.site-header {
+    background: #6c8094;
+    padding: 1.2rem 2rem 0.8rem;
+}
+
+.header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.blog-name {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #1a1a2e;
+    text-decoration: none;
+    padding-bottom: 0.2rem;
+}
+
+.nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.15rem;
+    list-style: none;
+    padding: 0.4rem 0 0.2rem;
+    border-top: 1px solid #eeece8;
+    width: 100%;
+}
+
+.nav-tabs li {
+    display: inline-block;
+}
+
+.nav-tabs a {
+    display: inline-block;
+    padding: 0.5rem 1.6rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #3d3d52;
+    text-decoration: none;
+    border-radius: 30px;
+    transition: background 0.2s, color 0.2s;
+    letter-spacing: -0.2px;
+}
+
+.nav-tabs a:hover {
+    background: #eeebe6;
+    color: #0f0f1a;
+}
+
+.nav-tabs a.active {
+    background: #e3dfd8;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+/* ----- Responsive for smaller screens ----- */
+@media (max-width: 600px) {
+    .site-header {
+        padding: 0.8rem 1rem 0.4rem;
+    }
+    .blog-name {
+        font-size: 1.6rem;
+    }
+    .nav-tabs a {
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+    }
+}
