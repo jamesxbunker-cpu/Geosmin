@@ -1,8 +1,8 @@
 /* ----- Simple block-style header (only for your exact classes) ----- */
-
-.site-header {
-    background: #6c8094;
-    padding: 1.2rem 2rem 0.8rem;
+site-header, .site-header{
+  display: block;
+  background: #6c8094;
+  min-height: 100px; /* adjust to match your header height */
 }
 
 .header-inner {
