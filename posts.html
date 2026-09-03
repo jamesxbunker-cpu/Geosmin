@@ -13,5 +13,276 @@
     <site-header> </site-header>
     <h1>Posts</h1>
 
+      <!-- ===== THIS DIV IS REQUIRED – the script injects posts here ===== -->
+  <div id="postsContainer">
+    <p>loading posts…</p>
+  </div>
+
+     <script>
+    (function() {
+      "use strict";
+
+      // ============================================================
+      // STEP 1: CONFIGURATION
+      // ============================================================
+      // Your post posts are stored in: posts/post1/, posts/post2/, etc.
+      // Each folder has an index.html with meta tags in the <head>.
+      
+      const post_FOLDER = 'posts';
+      const MAX_POSTS = 50;
+
+      // Get the container where posts will be displayed
+      const container = document.getElementById('postsContainer');
+
+      // ============================================================
+      // STEP 2: LOAD ONE POST FROM ITS FOLDER
+      // ============================================================
+      // This function tries to load a post from a folder.
+      // Example: loadPostFromFolder('posts/post5')
+      
+      function loadPostFromFolder(folderPath) {
+        const fileUrl = folderPath + '/post_index.html';
+        
+        // Go get the file
+        return fetch(fileUrl)
+          .then(
+            function(response) {
+              // If the file doesn't exist, stop and return nothing
+              if (!response.ok) {
+                return null;
+              }
+            // Otherwise, get the HTML as text
+              return response.text();
+            }
+          )
+          .then(
+            function(htmlText) {
+              // If we got nothing, stop
+              if (!htmlText) {
+                return null;
+            }
+            
+            // Parse the HTML so we can search it
+            const parser = new DOMParser();
+            const document = parser.parseFromString(htmlText, 'text/html');
+            
+            function findMeta(name) {
+              // Step 1: Look for a meta tag with this name
+              const metaTag = document.querySelector('meta[name="' + name + '"]');
+              
+              // Step 2: If we found the tag, get its content
+              if (metaTag) {
+                // Get the content attribute (e.g., "My Post")
+                const content = metaTag.getAttribute('content');
+                if (content) {
+                  return content;
+                } 
+                else {
+                  return '';
+                }
+              }
+              
+              // Step 3: If we didn't find the tag, return an empty string
+              return '';
+            }
+            
+            // Extract all the post information from meta tags
+            const post = {
+              title: findMeta('title') || 'Untitled',
+              description: findMeta('description') || '',
+              author: findMeta('author') || '',
+              date: findMeta('date') || '',
+              tags: findMeta('keywords') || '',
+              folder: folderPath
+            };
+            
+            // Get the tags as a string (e.g., "GitHub, Web, JavaScript")
+            const tagsString = post.tags;
+
+            // Split into an array at each comma
+            const tagsArray = tagsString.split(',');
+            const cleanedTags = [];
+
+            // Go through each tag
+            for (let i = 0; i < tagsArray.length; i++) {
+              // Remove spaces from the beginning and end
+              const cleanTag = tagsArray[i].trim();
+            
+              if (cleanTag.length > 0) {
+                cleanedTags.push(cleanTag);
+              }
+            }
+            post.tags = cleanedTags;
+            
+            return post;
+            }
+          )
+          .catch(
+            function(error) {
+            // If anything fails, return nothing
+              return null;
+            }
+          );
+      }
+
+      // ============================================================
+      // STEP 3: LOAD ALL POSTS
+      // ============================================================
+      // This loads every post folder and collects all the posts.
+      
+      function loadAllPosts() {
+        // Create an array to hold all the loading tasks
+        const loadingTasks = [];
+        
+        // Loop through post1 to post50
+        for (let i = 1; i <= MAX_POSTS; i++) {
+          const folderPath = post_FOLDER + '/post' + i;
+          
+          // Start loading this folder and remember the task
+          const task = loadPostFromFolder(folderPath)
+            .then(
+              function(post) {
+                // If we got a post, remember its index number
+                if (post) {
+                  post.index = i;
+                  return post;
+                }
+                // Otherwise, return nothing
+                return null;
+              }
+          );
+          
+          loadingTasks.push(task);
+        }
+        
+        // Wait for ALL loading tasks to finish
+        return Promise.all(loadingTasks)
+          .then(
+            function(allPosts) {
+              // Remove any nulls (folders that didn't have a post)
+              const validPosts = [];
+              for (let i = 0; i < allPosts.length; i++) {
+                if (allPosts[i] !== null) {
+                  validPosts.push(allPosts[i]);
+                }
+              }
+              
+              // Sort by index number (post1, post2, post3...)
+              validPosts.sort(
+                function(a, b) {
+                return a.index - b.index;
+                }
+              );
+              
+              return validPosts;
+            }
+        );
+      }
+
+      // ============================================================
+      // STEP 4: DISPLAY POSTS ON THE PAGE
+      // ============================================================
+      
+      function displayPosts(posts) {
+        // Clear the container
+        container.innerHTML = '';
+        
+        // If there are no posts, show a message
+        if (posts.length === 0) {
+          container.innerHTML = '<p>No posts found. Create posts/post1/post_index.html etc.</p>';
+          return;
+        }
+        
+        // Go through each post and display it
+        for (let i = 0; i < posts.length; i++) {
+          const post = posts[i];
+          
+          // Create a div for this post
+          const postDiv = document.createElement('div');
+          postDiv.style.marginBottom = '1.8rem';
+          postDiv.style.borderBottom = '1px solid #ccc';
+          postDiv.style.paddingBottom = '0.8rem';
+          
+          // --- Title (link to the full post) ---
+          const titleLink = document.createElement('a');
+          titleLink.href = post.folder + '/post_index.html';
+          titleLink.textContent = post.title;
+          
+          const titleHeading = document.createElement('h3');
+          titleHeading.style.margin = '0 0 0.2rem 0';
+          titleHeading.appendChild(titleLink);
+          postDiv.appendChild(titleHeading);
+          
+          // --- Author, Date, Tags ---
+          const metaParagraph = document.createElement('p');
+          metaParagraph.style.margin = '0.2rem 0';
+          
+          let metaText = '';
+          if (post.author) {
+            metaText += 'Author: ' + post.author;
+          }
+          if (post.date) {
+            if (metaText) 
+            {
+              metaText += '  ·  ';
+            }
+            metaText += 'Posted: ' + post.date;
+          }
+          if (post.tags.length > 0) {
+            if (metaText){
+              metaText += '  ·  ';
+            }
+            metaText += 'Tags: ' + post.tags.join(', ');
+          }
+          
+          metaParagraph.textContent = metaText || 'No metadata';
+          postDiv.appendChild(metaParagraph);
+          
+          // --- Description ---
+          if (post.description) {
+            const descriptionParagraph = document.createElement('p');
+            descriptionParagraph.textContent = post.description;
+            descriptionParagraph.style.margin = '0.4rem 0 0 0';
+            postDiv.appendChild(descriptionParagraph);
+          }
+          
+          // Add this post to the container
+          container.appendChild(postDiv);
+        }
+      }
+
+      // ============================================================
+      // STEP 5: START THE PROCESS
+      // ============================================================
+      
+      // Load all posts, then display them
+      loadAllPosts()
+        .then(
+          function(posts) {
+            displayPosts(posts);
+          }
+        )
+        .catch(
+          function(error) {
+            container.innerHTML = '<p>Error: ' + error.message + '</p>';
+          }
+        );
+
+      // ============================================================
+      // HOW TO USE THIS
+      // ============================================================
+      // 1. Create a folder called "posts" in the same directory
+      // 2. Inside "posts", create folders: post1, post2, post3, ...
+      // 3. In each folder, put an post_index.html file
+      // 4. In the <head> of post_index.html, add these meta tags:
+      //    <meta name="title" content="My Post Title">
+      //    <meta name="description" content="A short description.">
+      //    <meta name="author" content="Your Name">
+      //    <meta name="date" content="August 30, 2026">
+      //    <meta name="keywords" content="JavaScript, Web, GitHub">
+      // 5. The script will automatically find and display all your posts
+
+    })();
+  </script>
 </body>
 </html>
