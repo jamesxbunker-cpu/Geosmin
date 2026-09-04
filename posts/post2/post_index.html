@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamically Loading Content with JavaScript | James Bunker</title>
+    <meta name="title" content="Dynamically Loading Content with JavaScript" />
+    <meta name="description"
+        content="A simple guide to creating a loader that dynamically loads content into your webpage from files. This displays a brief of your content as a blog tile." />
+    <meta name="author" content="James Bunker" />
+    <meta name="date" content="September 3, 2026" />
+    <meta name="keywords" content="web development, JavaScript, HTML" />
+    <link rel="canonical" href="https://geosmin.ca/posts/post2/post_index.html" />
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../post.css" />
+    <script src="../../site_header.js"></script>
+    <link rel="stylesheet" href="../../style.css" />
+    <!-- INLINE STYLE: limit image width to fit screen -->
+    <style>
+        /* Ensure images never overflow the viewport / container */
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            /* optional centering */
+        }
+
+        /* Keep figure captions tidy */
+        figure {
+            margin: 1.5rem 0;
+        }
+
+        figcaption {
+            text-align: center;
+            font-style: italic;
+            margin-top: 0.25rem;
+        }
+
+        /* Optional: preserve code/pre readability */
+        pre {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        code {
+            word-break: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <site-header> </site-header>
+    <header>
+        <h1>Dynamically Loading Content with JavaScript</h1>
+        <p class="subtitle">
+            A simple guide to creating a loader that dynamically loads content into your webpage from files.
+            This displays a brief of your content as a blog tile.
+        </p>
+        <p class="metadata">
+            September 3, 2026 &nbsp; | &nbsp; Web Development
+        </p>
+    </header>
+
+    <hr />
+
+    <main>
+        <section>
+            <h2>Introduction</h2>
+            <p class="intro">
+                Hey I heard you wanted to start a blog! It's difficult to get started, but I can help you out.
+                This article will show you how to create a simple blog that dynamically loads content from files
+                using JavaScript. The toughest part to creating is starting, following this guide you will
+                at least be able to have a place to put your projects and posts. Trust me, this will make it a lot
+                easier to get started and keep going.
+            </p>
+            <p>
+                All you need for this one is a basic understanding of HTML, CSS, and JavaScript. If you don't know
+                any of these, I recommend checking out some tutorials online. There are plenty of free resources
+                available that can help you get up to speed.
+            </p>
+        </section>
+
+        <section>
+            <h2>What is a Dynamic Loader?</h2>
+            <p>
+                To begin we are going to setup the infrastructure of the loader. This will be done using JavaScript
+                and a neatly organized folder structure (so if desktop looks like a mess it might be time to clean that
+                up). The loader will be responsible for fetching the content from the files and displaying it on the
+                page. We will also create a simple HTML template for the blog tiles that will be used to display the
+                content.
+                This will allow us to easily add new posts in the future without having to modify the HTML of the page.
+            </p>
+            <p>
+                Now that last part is my favorite, moving forward you pop your files into a folder and boom, the loader
+                will
+                link them up for you. While there are many ways to do this, we will be taking the method I did. If you
+                dont like
+                it feel free to change it up, this make sense to me and keeps my repo clean.
+            </p>
+            <p>
+                Ok enough rambling, but nowadays your probably not even reading this because you can just do all of this
+                stuff
+                through some fancy CMS like WordPress or Wix. Even worse, using an AI...
+
+                Anyways, below is what yours will look like. Wait? how is this article in the post...
+            </p>
+
+            <figure>
+                <img src="figures/posts.png" alt="JavaScript Dynamic Loader Picture" />
+                <figcaption>
+                    Example dynamic loader result.
+                </figcaption>
+            </figure>
+
+        </section>
+
+        <section>
+            <h2>Code Walkthrough</h2>
+
+            <p>
+                Let's break down the script piece by piece so you understand exactly what's happening.
+            </p>
+
+            <!-- STEP 1: CONFIGURATION -->
+            <h3>Step 1: Configuration</h3>
+            <pre><code>const post_FOLDER = 'posts';
+const MAX_POSTS = 50;
+
+const container = document.getElementById('postsContainer');</code></pre>
+            <ul>
+                <li><strong><code>post_FOLDER</code></strong> — The folder where your posts are stored. Change this if
+                    you use a different name.</li>
+                <li><strong><code>MAX_POSTS</code></strong> — How many post folders to scan (post1 through post50). Bump
+                    this up if you have more.</li>
+                <li><strong><code>container</code></strong> — Grabs the HTML element where posts will be displayed. Must
+                    have <code>id="postsContainer"</code>.</li>
+            </ul>
+
+            <!-- STEP 2: LOAD ONE POST -->
+            <h3>Step 2: Load a Single Post</h3>
+            <pre><code>function loadPostFromFolder(folderPath) {
+    const fileUrl = folderPath + '/post_index.html';
+    
+    return fetch(fileUrl)
+        .then(function(response) {
+            if (!response.ok) return null;
+            return response.text();
+        })
+        .then(function(htmlText) {
+            if (!htmlText) return null;
+            
+            const parser = new DOMParser();
+            const document = parser.parseFromString(htmlText, 'text/html');
+            
+            function findMeta(name) {
+                const metaTag = document.querySelector('meta[name="' + name + '"]');
+                if (metaTag) {
+                    return metaTag.getAttribute('content') || '';
+                }
+                return '';
+            }
+            
+            const post = {
+                title: findMeta('title') || 'Untitled',
+                description: findMeta('description') || '',
+                author: findMeta('author') || '',
+                date: findMeta('date') || '',
+                tags: findMeta('keywords') || '',
+                folder: folderPath
+            };
+            
+            // Clean up tags
+            const tagsArray = post.tags.split(',');
+            const cleanedTags = [];
+            for (let i = 0; i &lt; tagsArray.length; i++) {
+                const cleanTag = tagsArray[i].trim();
+                if (cleanTag.length > 0) {
+                    cleanedTags.push(cleanTag);
+                }
+            }
+            post.tags = cleanedTags;
+            
+            return post;
+        })
+        .catch(function(error) {
+            return null;
+        });
+}</code></pre>
+            <ul>
+                <li><strong>Fetch</strong> — Requests the <code>post_index.html</code> file from the folder.</li>
+                <li><strong>Check response</strong> — If the file doesn't exist (404), returns <code>null</code>.</li>
+                <li><strong>DOMParser</strong> — Parses the HTML so we can search for meta tags.</li>
+                <li><strong><code>findMeta()</code></strong> — Helper function that looks for a meta tag by name and
+                    returns its <code>content</code>.</li>
+                <li><strong>Post object</strong> — Gathers all metadata into a clean object: <code>title</code>,
+                    <code>description</code>, <code>author</code>, <code>date</code>, <code>tags</code>, and
+                    <code>folder</code>.
+                </li>
+                <li><strong>Tag cleaning</strong> — Splits comma-separated tags, trims whitespace, and removes empty
+                    entries.</li>
+                <li><strong>Error handling</strong> — If anything fails, returns <code>null</code> so the script can
+                    skip that folder.</li>
+            </ul>
+
+            <!-- STEP 3: LOAD ALL POSTS -->
+            <h3>Step 3: Load All Posts</h3>
+            <pre><code>function loadAllPosts() {
+    const loadingTasks = [];
+    
+    for (let i = 1; i &lt;= MAX_POSTS; i++) {
+        const folderPath = post_FOLDER + '/post' + i;
+        const task = loadPostFromFolder(folderPath)
+            .then(function(post) {
+                if (post) {
+                    post.index = i;
+                    return post;
+                }
+                return null;
+            });
+        loadingTasks.push(task);
+    }
+    
+    return Promise.all(loadingTasks)
+        .then(function(allPosts) {
+            const validPosts = [];
+            for (let i = 0; i &lt; allPosts.length; i++) {
+                if (allPosts[i] !== null) {
+                    validPosts.push(allPosts[i]);
+                }
+            }
+            validPosts.sort(function(a, b) {
+                return b.index - a.index;
+            });
+            return validPosts;
+        });
+}</code></pre>
+            <ul>
+                <li><strong>Loop</strong> — Iterates from 1 to <code>MAX_POSTS</code> (50 by default), creating paths
+                    like <code>posts/post1/</code>, <code>posts/post2/</code>, etc.</li>
+                <li><strong>Promise array</strong> — Each <code>loadPostFromFolder()</code> call returns a promise; we
+                    store all of them in <code>loadingTasks</code>.</li>
+                <li><strong><code>Promise.all()</code></strong> — Waits for ALL folders to finish loading (or fail)
+                    before continuing.</li>
+                <li><strong>Filter nulls</strong> — Removes any folders that didn't contain a valid post.</li>
+                <li><strong>Sort</strong> — Orders posts by index number, <em>highest first</em> (so newer posts appear
+                    at the top).</li>
+            </ul>
+
+            <!-- STEP 4: DISPLAY POSTS -->
+            <h3>Step 4: Display Posts</h3>
+            <pre><code>function displayPosts(posts) {
+    container.innerHTML = '';
+    
+    if (posts.length === 0) {
+        container.innerHTML = '&lt;p&gt;No posts found. Create posts/post1/post_index.html etc.&lt;/p&gt;';
+        return;
+    }
+    
+    for (let i = 0; i &lt; posts.length; i++) {
+        const post = posts[i];
+        
+        const postDiv = document.createElement('div');
+        postDiv.style.marginBottom = '1.8rem';
+        postDiv.style.borderBottom = '1px solid #ccc';
+        postDiv.style.paddingBottom = '0.8rem';
+        
+        // Title (linked to the full post)
+        const titleLink = document.createElement('a');
+        titleLink.href = post.folder + '/post_index.html';
+        titleLink.textContent = post.title;
+        const titleHeading = document.createElement('h3');
+        titleHeading.style.margin = '0 0 0.2rem 0';
+        titleHeading.appendChild(titleLink);
+        postDiv.appendChild(titleHeading);
+        
+        // Metadata: Author, Date, Tags
+        const metaParagraph = document.createElement('p');
+        metaParagraph.style.margin = '0.2rem 0';
+        let metaText = '';
+        if (post.author) metaText += 'Author: ' + post.author;
+        if (post.date) {
+            if (metaText) metaText += '  ·  ';
+            metaText += 'Posted: ' + post.date;
+        }
+        if (post.tags.length > 0) {
+            if (metaText) metaText += '  ·  ';
+            metaText += 'Tags: ' + post.tags.join(', ');
+        }
+        metaParagraph.textContent = metaText || 'No metadata';
+        postDiv.appendChild(metaParagraph);
+        
+        // Description
+        if (post.description) {
+            const descriptionParagraph = document.createElement('p');
+            descriptionParagraph.textContent = post.description;
+            descriptionParagraph.style.margin = '0.4rem 0 0 0';
+            postDiv.appendChild(descriptionParagraph);
+        }
+        
+        container.appendChild(postDiv);
+    }
+}</code></pre>
+            <ul>
+                <li><strong>Clear container</strong> — Wipes out any existing content.</li>
+                <li><strong>Empty check</strong> — Shows a friendly message if no posts were found.</li>
+                <li><strong>Loop through posts</strong> — Creates a <code>&lt;div&gt;</code> for each post.</li>
+                <li><strong>Title</strong> — Wrapped in an <code>&lt;a&gt;</code> tag linking to the full post page.
+                </li>
+                <li><strong>Metadata</strong> — Displays author, date, and tags on one line, separated by
+                    <code>·</code>.
+                </li>
+                <li><strong>Description</strong> — Shows the description as a short preview paragraph.</li>
+                <li><strong>Inline styles</strong> — Adds basic spacing and borders for readability.</li>
+            </ul>
+
+            <!-- STEP 5: START THE PROCESS -->
+            <h3>Step 5: Kick It Off</h3>
+            <pre><code>loadAllPosts()
+    .then(function(posts) {
+        displayPosts(posts);
+    })
+    .catch(function(error) {
+        container.innerHTML = '&lt;p&gt;Error: ' + error.message + '&lt;/p&gt;';
+    });</code></pre>
+            <ul>
+                <li><strong>Call <code>loadAllPosts()</code></strong> — Starts the entire process.</li>
+                <li><strong><code>.then()</code></strong> — Once all posts are loaded, passes them to
+                    <code>displayPosts()</code>.
+                </li>
+                <li><strong><code>.catch()</code></strong> — If something goes wrong (network error, etc.), shows an
+                    error message.</li>
+            </ul>
+
+            <!-- HOW TO USE -->
+            <h3>How to Use This Script</h3>
+            <ol>
+                <li>Create a folder called <code>posts</code> in your site's root directory.</li>
+                <li>Inside <code>posts</code>, create numbered folders: <code>post1</code>, <code>post2</code>,
+                    <code>post3</code>, etc.
+                </li>
+                <li>In each folder, create a file named <code>post_index.html</code>.</li>
+                <li>Add these meta tags to the <code>&lt;head&gt;</code> of each <code>post_index.html</code>:</li>
+            </ol>
+            <pre><code>&lt;meta name="title" content="My Post Title"&gt;
+&lt;meta name="description" content="A short description."&gt;
+&lt;meta name="author" content="Your Name"&gt;
+&lt;meta name="date" content="August 30, 2026"&gt;
+&lt;meta name="keywords" content="JavaScript, Web, GitHub"&gt;</code></pre>
+            <ol start="5">
+                <li>Add <code>&lt;div id="postsContainer"&gt;&lt;/div&gt;</code> to the page where you want the list to
+                    appear.</li>
+                <li>Paste the script on the same page (or in an external <code>.js</code> file).</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>Follow Up</h2>
+            <p>
+                Now that you have a working dynamic loader, you can start creating posts! Just create a new folder
+                (e.g., <code>post3</code>) and add a <code>post_index.html</code> file with the appropriate meta tags.
+                The loader will automatically pick it up and display it on the main page.
+            </p>
+            <p>
+                While the loader is nice, also having the important data labeled as meta data if great (where have
+                I heard that name before). This allows for easy searching and indexing of your posts, and
+                can also be used for SEO purposes if you ever decide to make your blog public. Now Google and
+                other tools can find your content for scraping too, which is a good thing if you want to share
+                your work with the world. This is a bad thing if you are concerned about you blog being used for
+                nefarious purposes, which in that case I recommend using tinfoil neatly wrapped around your computer.
+                (But in all seriousness, if you are concerned about privacy, keep this on a local network or use a
+                private
+                server.)
+            </p>
+
+            <figure>
+                <img src="figures/example_post.png" alt="My post tile expanded once clicked." />
+                <figcaption>
+                    Example loaded webtile.
+                </figcaption>
+            </figure>
+        </section>
+
+
+        <section>
+            <h2>Code</h2>
+            <pre><code>&lt;script&gt;
+    (function() {
+      "use strict";
+
+      const post_FOLDER = 'posts';
+      const MAX_POSTS = 50;
+
+      const container = document.getElementById('postsContainer');
+
+      function loadPostFromFolder(folderPath) {
+        const fileUrl = folderPath + '/post_index.html';
+        return fetch(fileUrl)
+          .then(function(response) {
+            if (!response.ok) {
+              return null;
+            }
+            return response.text();
+          })
+          .then(function(htmlText) {
+            if (!htmlText) {
+              return null;
+            }
+            const parser = new DOMParser();
+            const document = parser.parseFromString(htmlText, 'text/html');
+
+            function findMeta(name) {
+              const metaTag = document.querySelector('meta[name="' + name + '"]');
+              if (metaTag) {
+                const content = metaTag.getAttribute('content');
+                if (content) {
+                  return content;
+                } else {
+                  return '';
+                }
+              }
+              return '';
+            }
+
+            const post = {
+              title: findMeta('title') || 'Untitled',
+              description: findMeta('description') || '',
+              author: findMeta('author') || '',
+              date: findMeta('date') || '',
+              tags: findMeta('keywords') || '',
+              folder: folderPath
+            };
+
+            const tagsString = post.tags;
+            const tagsArray = tagsString.split(',');
+            const cleanedTags = [];
+            for (let i = 0; i &lt; tagsArray.length; i++) {
+              const cleanTag = tagsArray[i].trim();
+              if (cleanTag.length &gt; 0) {
+                cleanedTags.push(cleanTag);
+              }
+            }
+            post.tags = cleanedTags;
+            return post;
+          })
+          .catch(function(error) {
+            return null;
+          });
+      }
+
+      function loadAllPosts() {
+        const loadingTasks = [];
+        for (let i = 1; i &lt;= MAX_POSTS; i++) {
+          const folderPath = post_FOLDER + '/post' + i;
+          const task = loadPostFromFolder(folderPath)
+            .then(function(post) {
+              if (post) {
+                post.index = i;
+                return post;
+              }
+              return null;
+            });
+          loadingTasks.push(task);
+        }
+        return Promise.all(loadingTasks)
+          .then(function(allPosts) {
+            const validPosts = [];
+            for (let i = 0; i &lt; allPosts.length; i++) {
+              if (allPosts[i] !== null) {
+                validPosts.push(allPosts[i]);
+              }
+            }
+            validPosts.sort(function(a, b) {
+              return b.index - a.index;
+            });
+            return validPosts;
+          });
+      }
+
+      function displayPosts(posts) {
+        container.innerHTML = '';
+        if (posts.length === 0) {
+          container.innerHTML = '&lt;p&gt;No posts found. Create posts/post1/post_index.html etc.&lt;/p&gt;';
+          return;
+        }
+        for (let i = 0; i &lt; posts.length; i++) {
+          const post = posts[i];
+          const postDiv = document.createElement('div');
+          postDiv.style.marginBottom = '1.8rem';
+          postDiv.style.borderBottom = '1px solid #ccc';
+          postDiv.style.paddingBottom = '0.8rem';
+          const titleLink = document.createElement('a');
+          titleLink.href = post.folder + '/post_index.html';
+          titleLink.textContent = post.title;
+          const titleHeading = document.createElement('h3');
+          titleHeading.style.margin = '0 0 0.2rem 0';
+          titleHeading.appendChild(titleLink);
+          postDiv.appendChild(titleHeading);
+          const metaParagraph = document.createElement('p');
+          metaParagraph.style.margin = '0.2rem 0';
+          let metaText = '';
+          if (post.author) {
+            metaText += 'Author: ' + post.author;
+          }
+          if (post.date) {
+            if (metaText) {
+              metaText += '  ·  ';
+            }
+            metaText += 'Posted: ' + post.date;
+          }
+          if (post.tags.length &gt; 0) {
+            if (metaText) {
+              metaText += '  ·  ';
+            }
+            metaText += 'Tags: ' + post.tags.join(', ');
+          }
+          metaParagraph.textContent = metaText || 'No metadata';
+          postDiv.appendChild(metaParagraph);
+          if (post.description) {
+            const descriptionParagraph = document.createElement('p');
+            descriptionParagraph.textContent = post.description;
+            descriptionParagraph.style.margin = '0.4rem 0 0 0';
+            postDiv.appendChild(descriptionParagraph);
+          }
+          container.appendChild(postDiv);
+        }
+      }
+
+      loadAllPosts()
+        .then(function(posts) {
+          displayPosts(posts);
+        })
+        .catch(function(error) {
+          container.innerHTML = '&lt;p&gt;Error: ' + error.message + '&lt;/p&gt;';
+        });
+
+    })();
+  &lt;/script&gt;</code></pre>
+
+            <section>
+                <h2>Links</h2>
+                <ul>
+                    <li>
+                        Project repository:
+                        <a href="https://github.com/jamesxbunker-cpu/Geosmin" target="_blank" rel="noopener noreferrer">
+                            GitHub Repository
+                        </a>
+                    </li>
+                    <li>
+                        Related project:
+                        <a href="https://geosmin.ca/projects">
+                            geosmin.ca/projects
+                        </a>
+                    </li>
+                </ul>
+            </section>
+    </main>
+</body>
+
+</html>
