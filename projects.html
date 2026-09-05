@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Geosmin</title>
@@ -7,11 +8,283 @@
   <script src="site_header.js"></script>
 
 </head>
+
 <body>
 
   <!-- ========== STATIC HEADER BAR with TAB OPTIONS ========== -->
-    <site-header> </site-header>
-    <h1>Projects</h1>
+  <site-header> </site-header>
+  <h1>Projects</h1>
+  <!-- ===== THIS DIV IS REQUIRED – the script injects projects here ===== -->
+  <div id="projectsContainer">
+    <p>loading projects…</p>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // ============================================================
+      // STEP 1: CONFIGURATION
+      // ============================================================
+      // Your project projects are stored in: projects/project1/, projects/project2/, etc.
+      // Each folder has an index.html with meta tags in the <head>.
+
+      const project_FOLDER = 'projects';
+      const MAX_PROJECTS = 50;
+
+      // Get the container where projects will be displayed
+      const container = document.getElementById('projectsContainer');
+
+      // ============================================================
+      // STEP 2: LOAD ONE PROJECT FROM ITS FOLDER
+      // ============================================================
+      // This function tries to load a project from a folder.
+      // Example: loadProjectFromFolder('projects/project5')
+
+      function loadProjectFromFolder(folderPath) {
+        const fileUrl = folderPath + '/project_index.html';
+
+        // Go get the file
+        return fetch(fileUrl)
+          .then(
+            function (response) {
+              // If the file doesn't exist, stop and return nothing
+              if (!response.ok) {
+                return null;
+              }
+              // Otherwise, get the HTML as text
+              return response.text();
+            }
+          )
+          .then(
+            function (htmlText) {
+              // If we got nothing, stop
+              if (!htmlText) {
+                return null;
+              }
+
+              // Parse the HTML so we can search it
+              const parser = new DOMParser();
+              const document = parser.parseFromString(htmlText, 'text/html');
+
+              function findMeta(name) {
+                // Step 1: Look for a meta tag with this name
+                const metaTag = document.querySelector('meta[name="' + name + '"]');
+
+                // Step 2: If we found the tag, get its content
+                if (metaTag) {
+                  // Get the content attribute (e.g., "My Project")
+                  const content = metaTag.getAttribute('content');
+                  if (content) {
+                    return content;
+                  }
+                  else {
+                    return '';
+                  }
+                }
+
+                // Step 3: If we didn't find the tag, return an empty string
+                return '';
+              }
+
+              // Extract all the project information from meta tags
+              const project = {
+                title: findMeta('title') || 'Untitled',
+                description: findMeta('description') || '',
+                author: findMeta('author') || '',
+                date: findMeta('date') || '',
+                tags: findMeta('keywords') || '',
+                folder: folderPath
+              };
+
+              // Get the tags as a string (e.g., "GitHub, Web, JavaScript")
+              const tagsString = project.tags;
+
+              // Split into an array at each comma
+              const tagsArray = tagsString.split(',');
+              const cleanedTags = [];
+
+              // Go through each tag
+              for (let i = 0; i < tagsArray.length; i++) {
+                // Remove spaces from the beginning and end
+                const cleanTag = tagsArray[i].trim();
+
+                if (cleanTag.length > 0) {
+                  cleanedTags.push(cleanTag);
+                }
+              }
+              project.tags = cleanedTags;
+
+              return project;
+            }
+          )
+          .catch(
+            function (error) {
+              // If anything fails, return nothing
+              return null;
+            }
+          );
+      }
+
+      // ============================================================
+      // STEP 3: LOAD ALL PROJECTS
+      // ============================================================
+      // This loads every project folder and collects all the projects.
+
+      function loadAllProjects() {
+        // Create an array to hold all the loading tasks
+        const loadingTasks = [];
+
+        // Loop through project1 to project50
+        for (let i = 1; i <= MAX_PROJECTS; i++) {
+          const folderPath = project_FOLDER + '/project' + i;
+
+          // Start loading this folder and remember the task
+          const task = loadProjectFromFolder(folderPath)
+            .then(
+              function (project) {
+                // If we got a project, remember its index number
+                if (project) {
+                  project.index = i;
+                  return project;
+                }
+                // Otherwise, return nothing
+                return null;
+              }
+            );
+
+          loadingTasks.push(task);
+        }
+
+        // Wait for ALL loading tasks to finish
+        return Promise.all(loadingTasks)
+          .then(
+            function (allProjects) {
+              // Remove any nulls (folders that didn't have a project)
+              const validProjects = [];
+              for (let i = 0; i < allProjects.length; i++) {
+                if (allProjects[i] !== null) {
+                  validProjects.push(allProjects[i]);
+                }
+              }
+
+              // Sort by index number (project1, project2, project3...)
+              validProjects.sort(
+                function (a, b) {
+                  return b.index - a.index;
+                }
+              );
+
+              return validProjects;
+            }
+          );
+      }
+
+      // ============================================================
+      // STEP 4: DISPLAY PROJECTS ON THE PAGE
+      // ============================================================
+
+      function displayProjects(projects) {
+        // Clear the container
+        container.innerHTML = '';
+
+        // If there are no projects, show a message
+        if (projects.length === 0) {
+          container.innerHTML = '<p>No projects found. Create projects/project1/project_index.html etc.</p>';
+          return;
+        }
+
+        // Go through each project and display it
+        for (let i = 0; i < projects.length; i++) {
+          const project = projects[i];
+
+          // Create a div for this project
+          const projectDiv = document.createElement('div');
+          projectDiv.style.marginBottom = '1.8rem';
+          projectDiv.style.borderBottom = '1px solid #ccc';
+          projectDiv.style.paddingBottom = '0.8rem';
+
+          // --- Title (link to the full project) ---
+          const titleLink = document.createElement('a');
+          titleLink.href = project.folder + '/project_index.html';
+          titleLink.textContent = project.title;
+
+          const titleHeading = document.createElement('h3');
+          titleHeading.style.margin = '0 0 0.2rem 0';
+          titleHeading.appendChild(titleLink);
+          projectDiv.appendChild(titleHeading);
+
+          // --- Author, Date, Tags ---
+          const metaParagraph = document.createElement('p');
+          metaParagraph.style.margin = '0.2rem 0';
+
+          let metaText = '';
+          if (project.author) {
+            metaText += 'Author: ' + project.author;
+          }
+          if (project.date) {
+            if (metaText) {
+              metaText += '  ·  ';
+            }
+            metaText += 'Projected: ' + project.date;
+          }
+          if (project.tags.length > 0) {
+            if (metaText) {
+              metaText += '  ·  ';
+            }
+            metaText += 'Tags: ' + project.tags.join(', ');
+          }
+
+          metaParagraph.textContent = metaText || 'No metadata';
+          projectDiv.appendChild(metaParagraph);
+
+          // --- Description ---
+          if (project.description) {
+            const descriptionParagraph = document.createElement('p');
+            descriptionParagraph.textContent = project.description;
+            descriptionParagraph.style.margin = '0.4rem 0 0 0';
+            projectDiv.appendChild(descriptionParagraph);
+          }
+
+          // Add this project to the container
+          container.appendChild(projectDiv);
+        }
+      }
+
+      // ============================================================
+      // STEP 5: START THE PROCESS
+      // ============================================================
+
+      // Load all projects, then display them
+      loadAllProjects()
+        .then(
+          function (projects) {
+            displayProjects(projects);
+          }
+        )
+        .catch(
+          function (error) {
+            container.innerHTML = '<p>Error: ' + error.message + '</p>';
+          }
+        );
+
+      // ============================================================
+      // HOW TO USE THIS
+      // ============================================================
+      // 1. Create a folder called "projects" in the same directory
+      // 2. Inside "projects", create folders: project1, project2, project3, ...
+      // 3. In each folder, put an project_index.html file
+      // 4. In the <head> of project_index.html, add these meta tags:
+      //    <meta name="title" content="My Project Title">
+      //    <meta name="description" content="A short description.">
+      //    <meta name="author" content="Your Name">
+      //    <meta name="date" content="August 30, 2026">
+      //    <meta name="keywords" content="JavaScript, Web, GitHub">
+      // 5. The script will automatically find and display all your projects
+
+    })();
+  </script>
 
 </body>
+
 </html>
