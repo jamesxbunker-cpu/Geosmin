@@ -29,151 +29,161 @@
     <body>
 
         <site-header></site-header>
+        <div class="project-content">
+            <header>
+                <h1>Raspberry Pi 5 Web Server <br style="display: none;" /><span
+                        style="font-weight:400; font-size:1.6rem;">with
+                        Cloudflare
+                        Tunnel &amp; Auto-Updates</span></h1>
+                <p class="subtitle">Host geosmin.ca from home – no open ports,
+                    automatic GitHub sync every 5 minutes.</p>
+                <p class="metadata">
+                    September 7, 2026 &nbsp; · &nbsp; Project &nbsp; · &nbsp;
+                    Status: <span class="badge">✅ Fully Operational</span>
+                </p>
+            </header>
 
-        <header>
-            <h1>Raspberry Pi 5 Web Server <br style="display: none;" /><span
-                    style="font-weight:400; font-size:1.6rem;">with Cloudflare
-                    Tunnel &amp; Auto-Updates</span></h1>
-            <p class="subtitle">Host geosmin.ca from home – no open ports,
-                automatic GitHub sync every 5 minutes.</p>
-            <p class="metadata">
-                September 7, 2026 &nbsp; · &nbsp; Project &nbsp; · &nbsp;
-                Status: <span class="badge">✅ Fully Operational</span>
-            </p>
-        </header>
+            <hr />
 
-        <hr />
-
-        <!-- QUICK OVERVIEW -->
-        <section>
-            <h2>Project Overview</h2>
-            <div class="summary-grid">
-                <div class="item"><span class="label">Project</span> <span
-                        class="value">Raspberry Pi 5 Web Server</span></div>
-                <div class="item"><span class="label">Domain</span> <span
-                        class="value">geosmin.ca</span></div>
-                <div class="item"><span class="label">Purpose</span> <span
-                        class="value">Host website from home without open
-                        ports</span></div>
-                <div class="item"><span class="label">Auto-Updates</span> <span
-                        class="value">Every 5 minutes from GitHub</span></div>
-                <div class="item"><span class="label">Status</span> <span
-                        class="value"><span class="badge">✅ Fully
-                            Operational</span></span></div>
-            </div>
-        </section>
-
-        <!-- ====== ROBUST ARCHITECTURE DIAGRAM ====== -->
-        <section>
-            <h2>Architecture</h2>
-            <div class="arch-container">
-                <div class="arch-diagram">
-
-                    <!-- Raspberry Pi 5 -->
-                    <div class="arch-node rpi">
-                        <span class="node-title">🖥️ Raspberry Pi 5</span>
-                        <div class="detail-list">
-                            <span class="item">Runs Cloudflare Tunnel + Nginx +
-                                update script</span>
-                            <span class="item">No open inbound ports
-                                required</span>
-                        </div>
-                    </div>
-
-                    <div class="arch-arrow">⬇ &nbsp;<span
-                            class="dim">────</span> &nbsp;⬇</div>
-
-                    <!-- Cloudflare Tunnel -->
-                    <div class="arch-node">
-                        <span class="node-title">🔒 Cloudflare Tunnel
-                            (cloudflared)</span>
-                        <div class="detail-list">
-                            <span class="item">Secure outbound connection to
-                                Cloudflare</span>
-                            <span class="item">No port forwarding needed</span>
-                            <span class="item">Forced IPv4 + HTTP/2</span>
-                        </div>
-                    </div>
-
-                    <div class="arch-arrow">⬇ &nbsp;<span
-                            class="dim">────</span> &nbsp;⬇</div>
-
-                    <!-- Nginx -->
-                    <div class="arch-node">
-                        <span class="node-title">🌐 Nginx Web Server</span>
-                        <div class="detail-list">
-                            <span class="item">Serves from
-                                /var/www/geosmin/Geosmin</span>
-                            <span class="item">Listens on port 8080</span>
-                            <span class="item">Reloaded after updates</span>
-                        </div>
-                    </div>
-
-                    <div class="arch-arrow">⬇ &nbsp;<span
-                            class="dim">────</span> &nbsp;⬇</div>
-
-                    <!-- Website Files -->
-                    <div class="arch-node">
-                        <span class="node-title">📁 Website Files</span>
-                        <div class="detail-list">
-                            <span class="item">Cloned from GitHub</span>
-                            <span class="item">/var/www/geosmin/Geosmin/</span>
-                        </div>
-                    </div>
-
-                    <div class="arch-arrow">⬇ &nbsp;<span
-                            class="dim">────</span> &nbsp;⬇</div>
-
-                    <!-- Auto-Update -->
-                    <div class="arch-node">
-                        <span class="node-title">🔄 Auto-Update System</span>
-                        <div class="detail-list">
-                            <span class="item">Cron job every 5 minutes</span>
-                            <span class="item">@reboot on startup</span>
-                            <span class="item">Stashes local changes before
-                                pull</span>
-                            <span class="item">Logs to
-                                /var/log/update-site.log</span>
-                        </div>
-                    </div>
-
-                    <!-- divider line -->
-                    <div
-                        style="color:#2d3a52; padding:0.3rem 0; font-size:0.8rem; letter-spacing:6px;">━
-                        ━ ━ ━ ━ ━ ━ ━ ━ ━ ━</div>
-
-                    <!-- Cloudflare Network -->
-                    <div class="arch-node cloud">
-                        <span class="node-title">☁️ Cloudflare Network</span>
-                        <div class="detail-list">
-                            <span class="item">HTTPS termination</span>
-                            <span class="item">DDoS protection</span>
-                            <span class="item">CDN caching</span>
-                        </div>
-                    </div>
-
-                    <div class="arch-arrow">⬇ &nbsp;<span
-                            class="dim">────</span> &nbsp;⬇</div>
-
-                    <!-- Visitors -->
-                    <div class="arch-node visitor">
-                        <span class="node-title">👤 Visitors</span>
-                        <div class="detail-list">
-                            <span class="item">Access at <span
-                                    style="color:#6ee7b7;">https://www.geosmin.ca</span></span>
-                            <span class="item">Secure HTTPS connection</span>
-                        </div>
-                    </div>
-
+            <!-- QUICK OVERVIEW -->
+            <section>
+                <h2>Project Overview</h2>
+                <div class="summary-grid">
+                    <div class="item"><span class="label">Project</span> <span
+                            class="value">Raspberry Pi 5 Web Server</span></div>
+                    <div class="item"><span class="label">Domain</span> <span
+                            class="value">geosmin.ca</span></div>
+                    <div class="item"><span class="label">Purpose</span> <span
+                            class="value">Host website from home without open
+                            ports</span></div>
+                    <div class="item"><span class="label">Auto-Updates</span>
+                        <span
+                            class="value">Every 5 minutes from
+                            GitHub</span></div>
+                    <div class="item"><span class="label">Status</span> <span
+                            class="value"><span class="badge">✅ Fully
+                                Operational</span></span></div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- PHASE 1: Tunnel -->
-        <section>
-            <h2>Phase 1: Cloudflare Tunnel Setup</h2>
-            <h3>Installation &amp; Authentication</h3>
-            <pre><code># Install cloudflared
+            <!-- ====== ROBUST ARCHITECTURE DIAGRAM ====== -->
+            <section>
+                <h2>Architecture</h2>
+                <div class="arch-container">
+                    <div class="arch-diagram">
+
+                        <!-- Raspberry Pi 5 -->
+                        <div class="arch-node rpi">
+                            <span class="node-title">🖥️ Raspberry Pi 5</span>
+                            <div class="detail-list">
+                                <span class="item">Runs Cloudflare Tunnel +
+                                    Nginx +
+                                    update script</span>
+                                <span class="item">No open inbound ports
+                                    required</span>
+                            </div>
+                        </div>
+
+                        <div class="arch-arrow">⬇ &nbsp;<span
+                                class="dim">────</span> &nbsp;⬇</div>
+
+                        <!-- Cloudflare Tunnel -->
+                        <div class="arch-node">
+                            <span class="node-title">🔒 Cloudflare Tunnel
+                                (cloudflared)</span>
+                            <div class="detail-list">
+                                <span class="item">Secure outbound connection to
+                                    Cloudflare</span>
+                                <span class="item">No port forwarding
+                                    needed</span>
+                                <span class="item">Forced IPv4 + HTTP/2</span>
+                            </div>
+                        </div>
+
+                        <div class="arch-arrow">⬇ &nbsp;<span
+                                class="dim">────</span> &nbsp;⬇</div>
+
+                        <!-- Nginx -->
+                        <div class="arch-node">
+                            <span class="node-title">🌐 Nginx Web Server</span>
+                            <div class="detail-list">
+                                <span class="item">Serves from
+                                    /var/www/geosmin/Geosmin</span>
+                                <span class="item">Listens on port 8080</span>
+                                <span class="item">Reloaded after updates</span>
+                            </div>
+                        </div>
+
+                        <div class="arch-arrow">⬇ &nbsp;<span
+                                class="dim">────</span> &nbsp;⬇</div>
+
+                        <!-- Website Files -->
+                        <div class="arch-node">
+                            <span class="node-title">📁 Website Files</span>
+                            <div class="detail-list">
+                                <span class="item">Cloned from GitHub</span>
+                                <span
+                                    class="item">/var/www/geosmin/Geosmin/</span>
+                            </div>
+                        </div>
+
+                        <div class="arch-arrow">⬇ &nbsp;<span
+                                class="dim">────</span> &nbsp;⬇</div>
+
+                        <!-- Auto-Update -->
+                        <div class="arch-node">
+                            <span class="node-title">🔄 Auto-Update
+                                System</span>
+                            <div class="detail-list">
+                                <span class="item">Cron job every 5
+                                    minutes</span>
+                                <span class="item">@reboot on startup</span>
+                                <span class="item">Stashes local changes before
+                                    pull</span>
+                                <span class="item">Logs to
+                                    /var/log/update-site.log</span>
+                            </div>
+                        </div>
+
+                        <!-- divider line -->
+                        <div
+                            style="color:#2d3a52; padding:0.3rem 0; font-size:0.8rem; letter-spacing:6px;">━
+                            ━ ━ ━ ━ ━ ━ ━ ━ ━ ━</div>
+
+                        <!-- Cloudflare Network -->
+                        <div class="arch-node cloud">
+                            <span class="node-title">☁️ Cloudflare
+                                Network</span>
+                            <div class="detail-list">
+                                <span class="item">HTTPS termination</span>
+                                <span class="item">DDoS protection</span>
+                                <span class="item">CDN caching</span>
+                            </div>
+                        </div>
+
+                        <div class="arch-arrow">⬇ &nbsp;<span
+                                class="dim">────</span> &nbsp;⬇</div>
+
+                        <!-- Visitors -->
+                        <div class="arch-node visitor">
+                            <span class="node-title">👤 Visitors</span>
+                            <div class="detail-list">
+                                <span class="item">Access at <span
+                                        style="color:#6ee7b7;">https://www.geosmin.ca</span></span>
+                                <span class="item">Secure HTTPS
+                                    connection</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- PHASE 1: Tunnel -->
+            <section>
+                <h2>Phase 1: Cloudflare Tunnel Setup</h2>
+                <h3>Installation &amp; Authentication</h3>
+                <pre><code># Install cloudflared
 sudo mkdir -p --mode=0755 /usr/share/keyrings
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
 echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
@@ -188,282 +198,298 @@ cloudflared tunnel create geosmin-rp5-server
 # Get token
 TOKEN=$(grep -o '"tunnel_token":"[^"]*"' ~/.cloudflared/0b28e502-(your tunnel ID).json | cut -d'"' -f4)</code></pre>
 
-            <h4>Tunnel Configuration</h4>
-            <p><strong>Service override</strong> <span
-                    class="file-path">/etc/systemd/system/cloudflared.service.d/override.conf</span></p>
-            <div class="script-container">[Service]
-                ExecStart=
-                ExecStart=/usr/bin/cloudflared --edge-ip-version 4 tunnel run
-                --token-file /etc/cloudflared/token
-                Restart=always
-                RestartSec=5
-                ExecStartPre=/bin/sleep 10</div>
-            <p><strong>Token file</strong> <span
-                    class="file-path">/etc/cloudflared/token</span>:
-                <code>eyJhIjoi... (your tunnel token)</code></p>
-        </section>
+                <h4>Tunnel Configuration</h4>
+                <p><strong>Service override</strong> <span
+                        class="file-path">/etc/systemd/system/cloudflared.service.d/override.conf</span></p>
+                <div class="script-container">[Service]
+                    ExecStart=
+                    ExecStart=/usr/bin/cloudflared --edge-ip-version 4 tunnel
+                    run
+                    --token-file /etc/cloudflared/token
+                    Restart=always
+                    RestartSec=5
+                    ExecStartPre=/bin/sleep 10</div>
+                <p><strong>Token file</strong> <span
+                        class="file-path">/etc/cloudflared/token</span>:
+                    <code>eyJhIjoi... (your tunnel token)</code></p>
+            </section>
 
-        <!-- PHASE 2: Network fixes -->
-        <section>
-            <h2>Phase 2: Network Fixes Applied</h2>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Problem</th><th>Solution</th><th>Why</th></tr></thead>
-                    <tbody>
-                        <tr><td>IPv6 connectivity
-                                failure</td><td><code>--edge-ip-version
-                                    4</code></td><td>Your network doesn't
-                                support IPv6</td></tr>
-                        <tr><td>UDP port 7844 blocked</td><td><code>--protocol
-                                    http2</code></td><td>ISP blocks QUIC
-                                traffic</td></tr>
-                        <tr><td>DNS resolution failure</td><td>1.1.1.1 and
-                                8.8.8.8 in <span
-                                    class="file-path">/etc/resolv.conf</span></td><td>Router
-                                DNS unreliable</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <h4>DNS Fix via NetworkManager</h4>
-            <pre><code>WIFI_NAME=$(nmcli -t -f NAME,TYPE con show --active | grep wifi | cut -d: -f1)
+            <!-- PHASE 2: Network fixes -->
+            <section>
+                <h2>Phase 2: Network Fixes Applied</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Problem</th><th>Solution</th><th>Why</th></tr></thead>
+                        <tbody>
+                            <tr><td>IPv6 connectivity
+                                    failure</td><td><code>--edge-ip-version
+                                        4</code></td><td>Your network doesn't
+                                    support IPv6</td></tr>
+                            <tr><td>UDP port 7844
+                                    blocked</td><td><code>--protocol
+                                        http2</code></td><td>ISP blocks QUIC
+                                    traffic</td></tr>
+                            <tr><td>DNS resolution failure</td><td>1.1.1.1 and
+                                    8.8.8.8 in <span
+                                        class="file-path">/etc/resolv.conf</span></td><td>Router
+                                    DNS unreliable</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h4>DNS Fix via NetworkManager</h4>
+                <pre><code>WIFI_NAME=$(nmcli -t -f NAME,TYPE con show --active | grep wifi | cut -d: -f1)
 sudo nmcli con mod "$WIFI_NAME" ipv4.dns "1.1.1.1 8.8.8.8"
 sudo nmcli con mod "$WIFI_NAME" ipv4.ignore-auto-dns yes
 sudo nmcli con down "$WIFI_NAME" && sudo nmcli con up "$WIFI_NAME"</code></pre>
-        </section>
+            </section>
 
-        <!-- PHASE 3 & 4: Nginx + Website -->
-        <section>
-            <h2>Phase 3 &amp; 4: Nginx &amp; Website Files</h2>
-            <h3>Nginx Installation &amp; Config</h3>
-            <pre><code>sudo apt update
+            <!-- PHASE 3 & 4: Nginx + Website -->
+            <section>
+                <h2>Phase 3 &amp; 4: Nginx &amp; Website Files</h2>
+                <h3>Nginx Installation &amp; Config</h3>
+                <pre><code>sudo apt update
 sudo apt install nginx -y</code></pre>
-            <p><strong>Config</strong> <span
-                    class="file-path">/etc/nginx/sites-available/default</span></p>
-            <div class="script-container">server {
-                listen 8080 default_server;
-                listen [::]:8080 default_server;
+                <p><strong>Config</strong> <span
+                        class="file-path">/etc/nginx/sites-available/default</span></p>
+                <div class="script-container">server {
+                    listen 8080 default_server;
+                    listen [::]:8080 default_server;
 
-                root /var/www/geosmin/Geosmin;
-                index index.html index.htm;
+                    root /var/www/geosmin/Geosmin;
+                    index index.html index.htm;
 
-                server_name _;
+                    server_name _;
 
-                location / {
-                try_files $uri $uri/ =404;
-                }
-                }</div>
-            <h3>Initial Clone</h3>
-            <pre><code>sudo git clone https://github.com/jamesxbunker-cpu/Geosmin /var/www/geosmin/Geosmin
+                    location / {
+                    try_files $uri $uri/ =404;
+                    }
+                    }</div>
+                <h3>Initial Clone</h3>
+                <pre><code>sudo git clone https://github.com/jamesxbunker-cpu/Geosmin /var/www/geosmin/Geosmin
 sudo chown -R $USER:$USER /var/www/geosmin/Geosmin
 sudo chmod -R 755 /var/www/geosmin/Geosmin</code></pre>
-        </section>
+            </section>
 
-        <!-- PHASE 5: Auto-Update -->
-        <section>
-            <h2>Phase 5: Auto-Update System</h2>
-            <p><strong>Final script</strong> <span
-                    class="file-path">/usr/local/bin/update-site.sh</span> –
-                full version available in repo. Key fixes:</p>
-            <ul style="columns:2; list-style:square; margin-left:1.5rem;">
-                <li>Log file permission check + chown</li>
-                <li>Added <code>safe.directory</code> for Git</li>
-                <li><code>chown -R .git</code> before ops</li>
-                <li>Full path to binaries (<code>/usr/bin/git</code>)</li>
-                <li>Stash &amp; reset --hard before pull</li>
-                <li>Force permissions before git operations</li>
-            </ul>
-            <h4>Cron Job</h4>
-            <div class="script-container"># crontab -l
-                PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-                SHELL=/bin/bash
-                HOME=/home/geosminserver
-                USER=geosminserver
+            <!-- PHASE 5: Auto-Update -->
+            <section>
+                <h2>Phase 5: Auto-Update System</h2>
+                <p><strong>Final script</strong> <span
+                        class="file-path">/usr/local/bin/update-site.sh</span> –
+                    full version available in repo. Key fixes:</p>
+                <ul style="columns:2; list-style:square; margin-left:1.5rem;">
+                    <li>Log file permission check + chown</li>
+                    <li>Added <code>safe.directory</code> for Git</li>
+                    <li><code>chown -R .git</code> before ops</li>
+                    <li>Full path to binaries (<code>/usr/bin/git</code>)</li>
+                    <li>Stash &amp; reset --hard before pull</li>
+                    <li>Force permissions before git operations</li>
+                </ul>
+                <h4>Cron Job</h4>
+                <div class="script-container"># crontab -l
+                    PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+                    SHELL=/bin/bash
+                    HOME=/home/geosminserver
+                    USER=geosminserver
 
-                */5 * * * * /usr/local/bin/update-site.sh
-                @reboot /usr/local/bin/update-site.sh</div>
-        </section>
+                    */5 * * * * /usr/local/bin/update-site.sh
+                    @reboot /usr/local/bin/update-site.sh</div>
+            </section>
 
-        <!-- FINAL SUMMARY -->
-        <section>
-            <h2>Final Working Setup Summary</h2>
-            <div class="status-grid">
-                <div><strong>Cloudflare Tunnel</strong> ✅ Healthy <br /><span
-                        style="font-size:0.9rem; color:#334155;">1 active
-                        replica, 2 routes</span></div>
-                <div><strong>Nginx</strong> ✅ Running <br /><span
-                        style="font-size:0.9rem; color:#334155;">Port
-                        8080</span></div>
-                <div><strong>Website</strong> ✅ Live <br /><a
-                        href="https://www.geosmin.ca"
-                        target="_blank">geosmin.ca</a></div>
-                <div><strong>Auto-Update</strong> ✅ Active <br /><span
-                        style="font-size:0.9rem; color:#334155;">Every 5 min +
-                        @reboot</span></div>
-                <div><strong>DNS</strong> ✅ Cloudflare</div>
-                <div><strong>SSL</strong> ✅ Cloudflare</div>
-                <div><strong>Git</strong> ✅ Safe dir, permissions fixed</div>
-                <div><strong>Logging</strong> ✅ <span
-                        class="file-path">/var/log/update-site.log</span></div>
-            </div>
-        </section>
+            <!-- FINAL SUMMARY -->
+            <section>
+                <h2>Final Working Setup Summary</h2>
+                <div class="status-grid">
+                    <div><strong>Cloudflare Tunnel</strong> ✅ Healthy
+                        <br /><span
+                            style="font-size:0.9rem; color:#334155;">1 active
+                            replica, 2 routes</span></div>
+                    <div><strong>Nginx</strong> ✅ Running <br /><span
+                            style="font-size:0.9rem; color:#334155;">Port
+                            8080</span></div>
+                    <div><strong>Website</strong> ✅ Live <br /><a
+                            href="https://www.geosmin.ca"
+                            target="_blank">geosmin.ca</a></div>
+                    <div><strong>Auto-Update</strong> ✅ Active <br /><span
+                            style="font-size:0.9rem; color:#334155;">Every 5 min
+                            +
+                            @reboot</span></div>
+                    <div><strong>DNS</strong> ✅ Cloudflare</div>
+                    <div><strong>SSL</strong> ✅ Cloudflare</div>
+                    <div><strong>Git</strong> ✅ Safe dir, permissions
+                        fixed</div>
+                    <div><strong>Logging</strong> ✅ <span
+                            class="file-path">/var/log/update-site.log</span></div>
+                </div>
+            </section>
 
-        <!-- TESTING & TROUBLESHOOTING -->
-        <section>
-            <h2>Testing &amp; Verification</h2>
-            <div class="grid-2">
-                <div>
-                    <h4>Check service status</h4>
-                    <pre><code>sudo systemctl status cloudflared
+            <!-- TESTING & TROUBLESHOOTING -->
+            <section>
+                <h2>Testing &amp; Verification</h2>
+                <div class="grid-2">
+                    <div>
+                        <h4>Check service status</h4>
+                        <pre><code>sudo systemctl status cloudflared
 sudo systemctl status nginx
 sudo systemctl status cron</code></pre>
-                </div>
-                <div>
-                    <h4>Manual update test</h4>
-                    <pre><code>sudo /usr/local/bin/update-site.sh
+                    </div>
+                    <div>
+                        <h4>Manual update test</h4>
+                        <pre><code>sudo /usr/local/bin/update-site.sh
 tail -20 /var/log/update-site.log</code></pre>
-                </div>
-                <div>
-                    <h4>Website test</h4>
-                    <pre><code>curl -I http://localhost:8080
+                    </div>
+                    <div>
+                        <h4>Website test</h4>
+                        <pre><code>curl -I http://localhost:8080
 curl -I https://www.geosmin.ca</code></pre>
-                </div>
-                <div>
-                    <h4>Git status</h4>
-                    <pre><code>cd /var/www/geosmin/Geosmin
+                    </div>
+                    <div>
+                        <h4>Git status</h4>
+                        <pre><code>cd /var/www/geosmin/Geosmin
 git status
 git log --oneline -3</code></pre>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- TROUBLESHOOTING TABLE -->
-        <section>
-            <h2>Troubleshooting Guide</h2>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Issue</th><th>Likely
-                                Cause</th><th>Fix</th></tr></thead>
-                    <tbody>
-                        <tr><td>502 Bad Gateway</td><td>Service set to
-                                HTTPS</td><td>Change to
-                                http://localhost:8080</td></tr>
-                        <tr><td>Tunnel not connecting</td><td>IPv6/DNS
-                                issues</td><td>Forced IPv4, set DNS to
-                                1.1.1.1</td></tr>
-                        <tr><td>Git fetch
-                                failed</td><td>Permission/ownership</td><td>Add
-                                safe.directory, fix ownership</td></tr>
-                        <tr><td>Local changes blocking pull</td><td>Manual
-                                edits</td><td>Script now stashes and
-                                resets</td></tr>
-                        <tr><td>Cron doesn't run</td><td>Limited
-                                environment</td><td>Added PATH and env
-                                variables</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <!-- TROUBLESHOOTING TABLE -->
+            <section>
+                <h2>Troubleshooting Guide</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Issue</th><th>Likely
+                                    Cause</th><th>Fix</th></tr></thead>
+                        <tbody>
+                            <tr><td>502 Bad Gateway</td><td>Service set to
+                                    HTTPS</td><td>Change to
+                                    http://localhost:8080</td></tr>
+                            <tr><td>Tunnel not connecting</td><td>IPv6/DNS
+                                    issues</td><td>Forced IPv4, set DNS to
+                                    1.1.1.1</td></tr>
+                            <tr><td>Git fetch
+                                    failed</td><td>Permission/ownership</td><td>Add
+                                    safe.directory, fix ownership</td></tr>
+                            <tr><td>Local changes blocking pull</td><td>Manual
+                                    edits</td><td>Script now stashes and
+                                    resets</td></tr>
+                            <tr><td>Cron doesn't run</td><td>Limited
+                                    environment</td><td>Added PATH and env
+                                    variables</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-        <!-- KEY FILES -->
-        <section>
-            <h2>Key File Locations</h2>
-            <ul style="columns:2; list-style:square; margin-left:1.5rem;">
-                <li><span class="file-path">/etc/cloudflared/token</span> –
-                    tunnel token</li>
-                <li><span
-                        class="file-path">/etc/systemd/system/cloudflared.service.d/override.conf</span></li>
-                <li><span
-                        class="file-path">/etc/nginx/sites-available/default</span></li>
-                <li><span class="file-path">/var/www/geosmin/Geosmin/</span> –
-                    website files</li>
-                <li><span
-                        class="file-path">/usr/local/bin/update-site.sh</span></li>
-                <li><span class="file-path">/var/log/update-site.log</span></li>
-                <li><code>crontab -l</code> – cron jobs</li>
-            </ul>
-        </section>
+            <!-- KEY FILES -->
+            <section>
+                <h2>Key File Locations</h2>
+                <ul style="columns:2; list-style:square; margin-left:1.5rem;">
+                    <li><span class="file-path">/etc/cloudflared/token</span> –
+                        tunnel token</li>
+                    <li><span
+                            class="file-path">/etc/systemd/system/cloudflared.service.d/override.conf</span></li>
+                    <li><span
+                            class="file-path">/etc/nginx/sites-available/default</span></li>
+                    <li><span class="file-path">/var/www/geosmin/Geosmin/</span>
+                        –
+                        website files</li>
+                    <li><span
+                            class="file-path">/usr/local/bin/update-site.sh</span></li>
+                    <li><span
+                            class="file-path">/var/log/update-site.log</span></li>
+                    <li><code>crontab -l</code> – cron jobs</li>
+                </ul>
+            </section>
 
-        <!-- AUTOMATED -->
-        <section>
-            <h2>What's Fully Automated</h2>
-            <ul class="checklist">
-                <li>Tunnel starts on boot (systemd with restart)</li>
-                <li>Nginx starts on boot</li>
-                <li>Website updates from GitHub every 5 minutes</li>
-                <li>Website updates at startup (cron @reboot)</li>
-                <li>Local changes are stashed automatically before pull</li>
-                <li><code>git reset --hard</code> ensures clean updates</li>
-                <li>File permissions forced before git operations</li>
-                <li>Nginx reloads automatically after updates</li>
-                <li>Git permissions fixed automatically (safe.directory,
-                    ownership)</li>
-                <li>Log file permissions handled automatically</li>
-                <li>Cron environment includes full PATH and variables</li>
-            </ul>
-        </section>
+            <!-- AUTOMATED -->
+            <section>
+                <h2>What's Fully Automated</h2>
+                <ul class="checklist">
+                    <li>Tunnel starts on boot (systemd with restart)</li>
+                    <li>Nginx starts on boot</li>
+                    <li>Website updates from GitHub every 5 minutes</li>
+                    <li>Website updates at startup (cron @reboot)</li>
+                    <li>Local changes are stashed automatically before pull</li>
+                    <li><code>git reset --hard</code> ensures clean updates</li>
+                    <li>File permissions forced before git operations</li>
+                    <li>Nginx reloads automatically after updates</li>
+                    <li>Git permissions fixed automatically (safe.directory,
+                        ownership)</li>
+                    <li>Log file permissions handled automatically</li>
+                    <li>Cron environment includes full PATH and variables</li>
+                </ul>
+            </section>
 
-        <!-- FUTURE -->
-        <section>
-            <h2>Future Improvements (Optional)</h2>
-            <ul>
-                <li><strong>Webhooks</strong> – GitHub triggers updates
-                    instantly instead of waiting 5 minutes</li>
-                <li><strong>Monitoring</strong> – Uptime monitoring with
-                    alerts</li>
-                <li><strong>Backups</strong> – Automated backup of website
-                    files</li>
-                <li><strong>Log Rotation</strong> – Prevent log files from
-                    growing too large</li>
-            </ul>
-        </section>
+            <!-- FUTURE -->
+            <section>
+                <h2>Future Improvements (Optional)</h2>
+                <ul>
+                    <li><strong>Webhooks</strong> – GitHub triggers updates
+                        instantly instead of waiting 5 minutes</li>
+                    <li><strong>Monitoring</strong> – Uptime monitoring with
+                        alerts</li>
+                    <li><strong>Backups</strong> – Automated backup of website
+                        files</li>
+                    <li><strong>Log Rotation</strong> – Prevent log files from
+                        growing too large</li>
+                </ul>
+            </section>
 
-        <!-- COMMANDS -->
-        <section>
-            <h2>Key Commands Reference</h2>
-            <div class="cmd-grid">
-                <div><span class="cmd">crontab -e</span> – edit cron</div>
-                <div><span class="cmd">crontab -l</span> – view cron</div>
-                <div><span class="cmd">sudo /usr/local/bin/update-site.sh</span>
-                    – run manually</div>
-                <div><span class="cmd">tail -20 /var/log/update-site.log</span>
-                    – view log</div>
-                <div><span class="cmd">tail -f /var/log/update-site.log</span> –
-                    watch live</div>
-                <div><span class="cmd">sudo systemctl status
-                        cloudflared</span></div>
-                <div><span class="cmd">sudo systemctl reload nginx</span></div>
-                <div><span class="cmd">cd /var/www/geosmin/Geosmin && git
-                        status</span></div>
-            </div>
-        </section>
+            <!-- COMMANDS -->
+            <section>
+                <h2>Key Commands Reference</h2>
+                <div class="cmd-grid">
+                    <div><span class="cmd">crontab -e</span> – edit cron</div>
+                    <div><span class="cmd">crontab -l</span> – view cron</div>
+                    <div><span class="cmd">sudo
+                            /usr/local/bin/update-site.sh</span>
+                        – run manually</div>
+                    <div><span class="cmd">tail -20
+                            /var/log/update-site.log</span>
+                        – view log</div>
+                    <div><span class="cmd">tail -f
+                            /var/log/update-site.log</span> –
+                        watch live</div>
+                    <div><span class="cmd">sudo systemctl status
+                            cloudflared</span></div>
+                    <div><span class="cmd">sudo systemctl reload
+                            nginx</span></div>
+                    <div><span class="cmd">cd /var/www/geosmin/Geosmin && git
+                            status</span></div>
+                </div>
+            </section>
 
-        <!-- RECENT FIXES -->
-        <section>
-            <h2>Recent Fixes Applied</h2>
-            <ul style="columns:2; list-style:square; margin-left:1.5rem;">
-                <li>2026-09-06: Log file permission denied → added chown</li>
-                <li>2026-09-06: Git dubious ownership → safe.directory</li>
-                <li>2026-09-06: .git folder permission denied → chown -R
-                    .git</li>
-                <li>2026-09-06: Script not logging errors → tee -a</li>
-                <li>2026-09-06: Cron not running → @reboot + verify</li>
-                <li>2026-09-06: Cron environment limited → full PATH</li>
-                <li>2026-09-06: Permission denied on files → force chown</li>
-                <li>2026-09-06: Git can't overwrite files → reset --hard</li>
-            </ul>
-            <div class="status-card">✅ Project Status: Complete and Fully
-                Operational</div>
-        </section>
+            <!-- RECENT FIXES -->
+            <section>
+                <h2>Recent Fixes Applied</h2>
+                <ul style="columns:2; list-style:square; margin-left:1.5rem;">
+                    <li>2026-09-06: Log file permission denied → added
+                        chown</li>
+                    <li>2026-09-06: Git dubious ownership → safe.directory</li>
+                    <li>2026-09-06: .git folder permission denied → chown -R
+                        .git</li>
+                    <li>2026-09-06: Script not logging errors → tee -a</li>
+                    <li>2026-09-06: Cron not running → @reboot + verify</li>
+                    <li>2026-09-06: Cron environment limited → full PATH</li>
+                    <li>2026-09-06: Permission denied on files → force
+                        chown</li>
+                    <li>2026-09-06: Git can't overwrite files → reset
+                        --hard</li>
+                </ul>
+                <div class="status-card">✅ Project Status: Complete and Fully
+                    Operational</div>
+            </section>
 
-        <hr />
-        <p style="text-align:center; color:#475569;">For full details, see the
-            <a href="https://github.com/jamesxbunker-cpu/Geosmin"
-                target="_blank">GitHub repository</a></p>
+            <hr />
+            <p style="text-align:center; color:#475569;">For full details, see
+                the
+                <a href="https://github.com/jamesxbunker-cpu/Geosmin"
+                    target="_blank">GitHub repository</a></p>
 
-        <footer>
-            © 2026 James Bunker · <a href="https://geosmin.ca">geosmin.ca</a>
-        </footer>
-
+            <footer>
+                © 2026 James Bunker · <a
+                    href="https://geosmin.ca">geosmin.ca</a>
+            </footer>
+        </div>
     </body>
 
 </html>

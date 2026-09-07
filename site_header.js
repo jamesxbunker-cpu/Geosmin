@@ -13,7 +13,7 @@ class SiteHeader extends HTMLElement {
       <ul class="nav-tabs">
         <li><a href="/index.html" class="${currentPath === 'index.html' ? 'active' : ''}"> <span>Home</span></a></li>
         <li><a href="/posts.html" class="${window.location.pathname.includes('post') ? 'active' : ''}"> <span>Posts</span></a></li>
-        <li><a href="/projects.html" class="${currentPath === 'projects.html' ? 'active' : ''}"> <span>Projects</span></a></li>
+        <li><a href="/projects.html" class="${window.location.pathname.includes('project') ? 'active' : ''}"> <span>Projects</span></a></li>
         <li><a href="/about.html" class="${currentPath === 'about.html' ? 'active' : ''}"> <span>About</span></a></li>
         <li><a href="/sensor.html" class="${currentPath === 'sensor.html' ? 'active' : ''}"> <span>Sensor</span></a></li>
       </ul>
