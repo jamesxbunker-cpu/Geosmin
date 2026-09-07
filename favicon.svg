@@ -1,15 +1,8 @@
 <svg
    version="1.1"
-   viewBox="30 60 600 510"
+   viewBox="10 75 640 490"
    preserveAspectRatio="xMidYMid meet"
    xmlns="http://www.w3.org/2000/svg">
-
-  <rect
-     fill="#ffffff"
-     width="656"
-     height="656"
-     x="1.6"
-     y="1.6" />
 
   <path
      fill="#1f244c"
