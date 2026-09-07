@@ -183,10 +183,10 @@ sudo apt-get update && sudo apt-get install cloudflared
 cloudflared tunnel login
 # Create tunnel (or use existing ID)
 cloudflared tunnel create geosmin-rp5-server
-# Used existing tunnel ID: 0b28e502-53dc-47ff-9a49-0bb216f58bf8
+# Used existing tunnel ID: 0b28e502-(your tunnel ID)
 
 # Get token
-TOKEN=$(grep -o '"tunnel_token":"[^"]*"' ~/.cloudflared/0b28e502-53dc-47ff-9a49-0bb216f58bf8.json | cut -d'"' -f4)</code></pre>
+TOKEN=$(grep -o '"tunnel_token":"[^"]*"' ~/.cloudflared/0b28e502-(your tunnel ID).json | cut -d'"' -f4)</code></pre>
 
             <h4>Tunnel Configuration</h4>
             <p><strong>Service override</strong> <span
