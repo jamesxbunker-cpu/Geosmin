@@ -2,13 +2,14 @@ class SiteHeader extends HTMLElement {
   connectedCallback() {
     // Get current page filename BEFORE rendering
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-    
+
     // Build the HTML with active class already applied
     this.innerHTML = `
   <header class="site-header">
     <div class="header-inner">
       <a href="/index.html" class="blog-name">
-        <span>Geosmin</span>
+        <img src="/favicon.svg" alt="Logo" class="site-logo">
+        <span class="blog-title">Geosmin</span>
       </a>
       <ul class="nav-tabs">
         <li><a href="/index.html" class="${currentPath === 'index.html' ? 'active' : ''}"> <span>Home</span></a></li>
@@ -19,7 +20,7 @@ class SiteHeader extends HTMLElement {
       </ul>
     </div>
   </header>
-    `;
+`;
   }
 }
 customElements.define('site-header', SiteHeader);

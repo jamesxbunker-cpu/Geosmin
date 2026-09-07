@@ -1,75 +1,184 @@
-/* ----- Simple block-style header (only for your exact classes) ----- */
-site-header, .site-header{
+/* ====================================================
+   SITE HEADER - Mobile Responsive
+   ==================================================== */
+
+/* ----- Base header ----- */
+site-header {
   display: block;
+  width: 100%;
+}
+
+.site-header {
   background: #6c8094;
-  min-height: 100px; /* adjust to match your header height */
-  padding-top: 5px;
+  padding: 0.75rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  min-height: auto;
 }
 
 .header-inner {
-    max-width: 960px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 60px;
 }
 
+/* ----- Brand / Logo ----- */
 .blog-name {
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    color: #1a1a2e;
-    text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  flex-shrink: 0;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+  font-feature-settings: "liga" 1, "dlig" 1;
+  transition: opacity 0.2s ease;
+  line-height: 1.2;
 }
 
+.blog-name:hover {
+  opacity: 0.8;
+}
+
+.site-logo {
+  height: 36px;
+  width: auto;
+  display: block;
+}
+
+.blog-title {
+  color: #ffffff;
+}
+
+/* ----- Navigation ----- */
 .nav-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.15rem;
-    list-style: none;
-    padding: 5px;
-    border-top: 1px solid #eeece8;
-    width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: none;
+  width: auto;
 }
 
 .nav-tabs li {
-    display: inline-block;
+  display: inline-block;
 }
 
 .nav-tabs a {
-    display: inline-block;
-    padding: 0.5rem 1.6rem;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: #3d3d52;
-    text-decoration: none;
-    border-radius: 30px;
-    transition: background 0.2s, color 0.2s;
-    letter-spacing: -0.2px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  display: inline-block;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  letter-spacing: -0.2px;
 }
 
 .nav-tabs a:hover {
-    background: #eeebe6;
-    color: #0f0f1a;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 
 .nav-tabs a.active {
-    background: #e3dfd8;
-    font-weight: 600;
-    color: #1a1a2e;
+  background: rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+  color: #ffffff;
 }
 
-/* ----- Responsive for smaller screens ----- */
-@media (max-width: 600px) {
-    .site-header {
-        padding: 0.8rem 1rem 0.4rem;
-    }
-    .blog-name {
-        font-size: 1.6rem;
-    }
-    .nav-tabs a {
-        padding: 0.4rem 1rem;
-        font-size: 0.85rem;
-    }
+/* ====================================================
+   MOBILE RESPONSIVE - This is what you're missing!
+   ==================================================== */
+
+/* ----- Tablet (768px and below) ----- */
+@media (max-width: 768px) {
+  .site-header {
+    padding: 0.5rem 0;
+  }
+
+  .header-inner {
+    flex-direction: column;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+    min-height: auto;
+  }
+
+  .blog-name {
+    width: 100%;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  .site-logo {
+    height: 30px;
+  }
+
+  .nav-tabs {
+    justify-content: center;
+    width: 100%;
+    gap: 0.2rem;
+  }
+
+  .nav-tabs a {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+  }
+}
+
+/* ----- Mobile (480px and below) ----- */
+@media (max-width: 480px) {
+  .header-inner {
+    padding: 0.4rem 0.75rem;
+    gap: 0.4rem;
+  }
+
+  .blog-name {
+    font-size: 1.2rem;
+  }
+
+  .site-logo {
+    height: 26px;
+  }
+
+  .nav-tabs {
+    gap: 0.15rem;
+  }
+
+  .nav-tabs a {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.7rem;
+    border-radius: 4px;
+  }
+}
+
+/* ----- Very Small (400px and below) ----- */
+@media (max-width: 400px) {
+  .nav-tabs a {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+  }
+
+  .blog-name {
+    font-size: 1rem;
+  }
+
+  .site-logo {
+    height: 22px;
+  }
 }
