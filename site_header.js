@@ -7,7 +7,7 @@ class SiteHeader extends HTMLElement {
     this.innerHTML = `
   <header class="site-header">
     <div class="header-inner">
-      <a href="index.html" class="blog-name">
+      <a href="/index.html" class="blog-name">
         <span>Geosmin</span>
       </a>
       <ul class="nav-tabs">
