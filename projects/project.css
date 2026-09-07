@@ -1,8 +1,20 @@
+/* ====================================================
+   project-summary.css
+   Reusable styles for project documentation pages
+   ==================================================== */
+
+/* ---------- base ---------- */
 body {
     color: #222;
     background: #fff;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 2rem;
+    line-height: 1.6;
 }
 
+/* ---------- typography ---------- */
 header {
     text-align: center;
     margin-bottom: 40px;
@@ -11,32 +23,29 @@ header {
 h1 {
     font-size: 2.4rem;
     margin-bottom: 10px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 h2 {
     margin-top: 50px;
     padding-bottom: 8px;
     border-bottom: 1px solid #ddd;
+    font-size: 1.7rem;
 }
 
 h3 {
     margin-top: 35px;
+    font-size: 1.2rem;
 }
-.script-container {
-            background: #0d1117;
-            color: #e6edf3;
-            border-radius: 16px;
-            padding: 1.5rem 1.8rem;
-            margin: 1.5rem 0 2rem 0;
-            overflow-x: auto;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
-            font-size: 0.9rem;
-            line-height: 1.7;
-            white-space: pre-wrap;
-            word-break: break-word;
-            tab-size: 2;
-        }
+
+h4 {
+    font-size: 1rem;
+    margin-top: 1.2rem;
+    margin-bottom: 0.2rem;
+    color: #1e293b;
+}
+
 .subtitle {
     font-size: 1.15rem;
     color: #555;
@@ -46,6 +55,22 @@ h3 {
 .metadata {
     color: #777;
     font-size: 0.95rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.intro {
+    font-size: 1.05rem;
+}
+
+a {
+    color: #0645ad;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 hr {
@@ -54,6 +79,7 @@ hr {
     margin: 30px 0;
 }
 
+/* ---------- code blocks ---------- */
 pre {
     background: #f4f4f4;
     padding: 20px;
@@ -61,6 +87,7 @@ pre {
     border-radius: 6px;
     font-family: Consolas, Monaco, monospace;
     font-size: 0.9rem;
+    border-left: 4px solid #3b82f6;
 }
 
 code {
@@ -68,8 +95,27 @@ code {
     background: #f4f4f4;
     padding: 2px 5px;
     border-radius: 3px;
+    word-break: break-word;
 }
 
+/* ---------- script container (dark terminal) ---------- */
+.script-container {
+    background: #0d1117;
+    color: #e6edf3;
+    border-radius: 16px;
+    padding: 1.5rem 1.8rem;
+    margin: 1.5rem 0 2rem 0;
+    overflow-x: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    tab-size: 2;
+}
+
+/* ---------- figures ---------- */
 figure {
     margin: 30px 0;
     text-align: center;
@@ -86,10 +132,335 @@ figcaption {
     margin-top: 8px;
 }
 
-a {
-    color: #0645ad;
+/* ---------- badges ---------- */
+.badge {
+    background: #2b6f4b;
+    color: white;
+    padding: 0.2rem 0.9rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+    letter-spacing: 0.3px;
 }
 
-.intro {
-    font-size: 1.05rem;
+.badge-warn {
+    background: #b45309;
+}
+
+.badge-info {
+    background: #2563eb;
+}
+
+/* ---------- summary grid ---------- */
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 2rem;
+    background: #f8fafc;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    border: 1px solid #e9edf2;
+    margin: 1.5rem 0;
+}
+
+.summary-grid .item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed #dce2ea;
+}
+
+.summary-grid .item:last-child {
+    border-bottom: none;
+}
+
+.summary-grid .label {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.summary-grid .value {
+    color: #0f172a;
+}
+
+/* ---------- architecture diagram ---------- */
+.arch-container {
+    background: #0b1120;
+    border-radius: 20px;
+    padding: 2rem 1.2rem 2rem 1.2rem;
+    margin: 1.5rem 0;
+    border: 1px solid #1e293b;
+    overflow-x: auto;
+}
+
+.arch-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    min-width: 600px;
+}
+
+.arch-node {
+    background: #111b2e;
+    border: 1.5px solid #2d3a52;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    width: 100%;
+    max-width: 600px;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: border-color 0.2s;
+}
+
+.arch-node:hover {
+    border-color: #4b6a8f;
+}
+
+.arch-node .node-title {
+    color: #facc15;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.arch-node .detail-list {
+    margin: 0.2rem 0 0 0.8rem;
+    padding-left: 0.2rem;
+}
+
+.arch-node .detail-list .item {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    display: block;
+}
+
+.arch-node .detail-list .item::before {
+    content: "• ";
+    color: #4b6a8f;
+}
+
+.arch-node.cloud {
+    border-color: #2d4b6f;
+    background: #0d1a2b;
+}
+
+.arch-node.cloud .node-title {
+    color: #60a5fa;
+}
+
+.arch-node.visitor {
+    border-color: #2d6f4b;
+    background: #0d1f15;
+}
+
+.arch-node.visitor .node-title {
+    color: #6ee7b7;
+}
+
+.arch-node.rpi {
+    border-color: #6b4b2d;
+    background: #1f150d;
+}
+
+.arch-node.rpi .node-title {
+    color: #fbbf24;
+}
+
+.arch-arrow {
+    color: #4b6a8f;
+    font-size: 1.2rem;
+    padding: 0.1rem 0;
+    letter-spacing: 4px;
+    user-select: none;
+}
+
+.arch-arrow .dim {
+    color: #2d3a52;
+}
+
+/* ---------- tables ---------- */
+.table-wrap {
+    overflow-x: auto;
+    margin: 1rem 0;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fafcff;
+    font-size: 0.9rem;
+}
+
+.table-wrap th {
+    background: #eef2f6;
+    font-weight: 600;
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    border-bottom: 2px solid #d1d9e6;
+}
+
+.table-wrap td {
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table-wrap tr:last-child td {
+    border-bottom: none;
+}
+
+/* ---------- file path / command pills ---------- */
+.file-path {
+    background: #eef2f6;
+    padding: 0.15rem 0.6rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+.cmd {
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 0.15rem 0.7rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+/* ---------- checklist ---------- */
+.checklist {
+    list-style: none;
+    padding-left: 0;
+    columns: 2;
+}
+
+.checklist li {
+    padding: 0.2rem 0;
+}
+
+.checklist li::before {
+    content: "✅ ";
+}
+
+/* ---------- status card ---------- */
+.status-card {
+    background: #d1fae5;
+    padding: 1rem 1.5rem;
+    border-radius: 14px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 1.2rem;
+    border: 1px solid #86d9b0;
+    margin-top: 1.5rem;
+}
+
+/* ---------- grid layouts ---------- */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.8rem;
+    background: #f1f5f9;
+    padding: 1.5rem;
+    border-radius: 14px;
+}
+
+.cmd-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem 1.5rem;
+    background: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+}
+
+/* ---------- footer ---------- */
+footer {
+    margin-top: 2.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #dce2ea;
+    color: #64748b;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+footer a {
+    color: #2563eb;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 700px) {
+
+    .summary-grid,
+    .two-col,
+    .grid-2,
+    .cmd-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-grid {
+        padding: 1rem;
+    }
+
+    .arch-node {
+        padding: 0.6rem 1rem;
+    }
+
+    .arch-diagram {
+        font-size: 0.7rem;
+        min-width: unset;
+    }
+
+    .checklist {
+        columns: 1;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+        margin-top: 30px;
+    }
+
+    pre {
+        font-size: 0.8rem;
+        padding: 12px;
+    }
+
+    .arch-container {
+        padding: 1rem 0.5rem;
+    }
 }
