@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Hosting on Raspberry Pi 5 with Cloudflare Tunnel | James
+            Bunker</title>
+        <meta name="title"
+            content="Hosting on Raspberry Pi 5 with Cloudflare Tunnel">
+        <meta name="description"
+            content="Complete step-by-step guide: set up Cloudflare Tunnel on Raspberry Pi 5, fix 502 errors, configure DNS, and secure your self-hosted website without opening router ports.">
+        <meta name="author" content="James Bunker">
+        <meta name="date" content="September 7, 2026">
+        <meta name="keywords"
+            content="Raspberry Pi, Cloudflare Tunnel, self-hosting, web server, Nginx, DNS, geosmin.ca">
+        <link rel="canonical"
+            href="https://geosmin.ca/posts/post3/post_index.html">
+        <link rel="stylesheet" href="../post.css">
+        <script src="../../site_header.js"></script>
+        <link rel="stylesheet" href="../../style.css">
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <style>
+        figure { margin: 1.5rem 0; }
+        figcaption { text-align: center; font-style: italic; margin-top: 0.25rem; }
+        pre { overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; max-width: 100%; background: #f5f5f5; padding: 1rem; border-radius: 8px; }
+        code { word-break: break-word; }
+        .highlight-box { background: #f0f7ff; padding: 1rem 1.5rem; border-left: 4px solid #1e90ff; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .fix-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .fix-table th { background: #2c3e50; color: white; padding: 0.5rem; text-align: left; }
+        .fix-table td, .fix-table th { border: 1px solid #ddd; padding: 0.5rem; }
+        .fix-table tr:nth-child(even) { background: #f9f9f9; }
+        .command-block { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; font-family: monospace; overflow-x: auto; }
+        .command-block .prompt { color: #6a9955; }
+        .success { color: #2ecc71; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .step { background: #eaf4fb; padding: 0.2rem 0.8rem; border-radius: 20px; display: inline-block; margin-bottom: 0.5rem; }
+        hr { margin: 2rem 0; }
+    </style>
+    </head>
+    <body>
+        <site-header></site-header>
+        <header class="page-header">
+            <h1>Hosting on Raspberry Pi 5 with Cloudflare Tunnel</h1>
+            <p class="subtitle">
+                A complete, battle-tested guide to self-hosting your website on
+                a Raspberry Pi 5 using Cloudflare Tunnel —
+                no open ports, no Dynamic DNS, and no headaches (god knows I had
+                a few).
+            </p>
+            <p class="metadata">
+                September 7, 2026 &nbsp; | &nbsp; Raspberry Pi, Cloudflare,
+                Self-Hosting
+            </p>
+        </header>
+        <hr />
+        <main>
+            <!-- ===== INTRODUCTION ===== -->
+            <section>
+                <h2>Introduction</h2>
+                <p class="intro">
+                    After moving my site from GitHub Pages to a Raspberry Pi 5,
+                    I wanted a secure, always‑on solution that didn't require
+                    opening router ports or messing around with Dynamic DNS.
+                    Especially if I ever change WiFi providers or get a new
+                    router. Cloudflare Tunnel was the perfect answer, but
+                    getting it working wasn't entirely smooth.
+                </p>
+                <p>
+                    This guide documents every step I took, including the
+                    <strong>three major fixes</strong> that turned a failing
+                    tunnel into a civil engineers dream. If you're setting up
+                    Cloudflare Tunnel on a Pi (or any home server), this will
+                    save you time debugging.
+                </p>
+                <div class="highlight-box">
+                    <strong>Project Goal:</strong> Host <code>geosmin.ca</code>
+                    (previously on GitHub Pages) on a Raspberry Pi 5 using
+                    Cloudflare Tunnel, allowing visitors to access it securely
+                    without opening ports or dealing with Dynamic DNS.
+                </div>
+            </section>
+
+            <!-- ===== PHASE 1: INSTALL CLOUDFLARED ===== -->
+            <section>
+                <h2>Installing <code>cloudflared</code></h2>
+                <p>I installed <code>cloudflared</code> using Cloudflare's
+                    official APT repository to ensure automatic updates.</p>
+                <div class="command-block">
+                    <span class="prompt"># Add Cloudflare's GPG key</span><br>
+                    sudo mkdir -p --mode=0755 /usr/share/keyrings<br>
+                    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg |
+                    sudo tee /usr/share/keyrings/cloudflare-main.gpg
+                    >/dev/null<br><br>
+                    <span class="prompt"># Add the repository</span><br>
+                    echo
+                    'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main'
+                    | sudo tee /etc/apt/sources.list.d/cloudflared.list<br><br>
+                    <span class="prompt"># Install</span><br>
+                    sudo apt-get update && sudo apt-get install cloudflared
+                </div>
+                <p>Verify with <code>cloudflared --version</code> (expected:
+                    <code>cloudflared version 2026.8.3</code> or similar).</p>
+            </section>
+
+            <!-- ===== PHASE 2: AUTH ===== -->
+            <section>
+                <h2>Authentication with Cloudflare</h2>
+                <p>Run the login command to authenticate your Pi with your
+                    Cloudflare account, this more or less shakes hands and
+                    confirms it is authenticated:</p>
+                <div class="command-block">
+                    cloudflared tunnel login
+                </div>
+                <p>This opens a URL in your browser; after logging in,
+                    Cloudflare saves a certificate at
+                    <code>~/.cloudflared/cert.pem</code>.</p>
+                <pre>✅ You have successfully logged in.
+Credentials saved to: /home/geosminserver/.cloudflared/cert.pem</pre>
+            </section>
+
+            <!-- ===== PHASE 3: CREATE TUNNEL ===== -->
+            <section>
+                <h2>Creating the Tunnel</h2>
+                <p>I attempted to create a tunnel named
+                    <code>geosmin-rp5-server</code>:</p>
+                <div class="command-block">
+                    cloudflared tunnel create geosmin-rp5-server
+                </div>
+                <p class="error">Error: <code>tunnel with name already
+                        exists</code></p>
+                <p>Since the name was taken, I used the existing tunnel ID
+                    <code>0b28e502-(tunnnel-id)</code>. Look, this exisiting
+                    tunnel was not here on its own. I made it with the
+                    Cloudflare dashboard, I didn't create it manually. But this
+                    causes me to go in a few circles because I can't seem to
+                    create a new tunnel with the same name (I did not realize
+                    the one made on the dashboard was actually created...).</p>
+                <p><strong>Extract the token</strong> from the credentials
+                    file:</p>
+                <div class="command-block">
+                    ls -la ~/.cloudflared/*.json<br>
+                    TOKEN=$(grep -o '"tunnel_token":"[^"]*"'
+                    ~/.cloudflared/0b28e502-(tunnnel-id).json | cut -d'"'
+                    -f4)<br>
+                    echo $TOKEN
+                </div>
+                <p>Save the token securely:</p>
+                <div class="command-block">
+                    sudo mkdir -p /etc/cloudflared<br>
+                    echo $TOKEN | sudo tee /etc/cloudflared/token<br>
+                    sudo chmod 600 /etc/cloudflared/token
+                </div>
+            </section>
+
+            <!-- ===== PHASE 4: TESTING ===== -->
+            <section>
+                <h2>Testing the Tunnel Manually</h2>
+                <p>Initial test failed. I added the critical flags:</p>
+                <div class="command-block">
+                    sudo cloudflared --edge-ip-version 4 --protocol http2 tunnel
+                    run --token YOUR_TOKEN
+                </div>
+                <div class="highlight-box">
+                    <strong>✅ Success indicators:</strong><br>
+                    • <span class="success">INF Tunnel connection
+                        established</span><br>
+                    • Error 1033 when visiting the site, <strong>this is
+                        good!</strong> It means the tunnel works but no web
+                    server is running. If nginx is not setup or something of
+                    that nature this is to be expected.
+                </div>
+            </section>
+
+            <!-- ===== PHASE 5: FIXES ===== -->
+            <section>
+                <h2>Fixing Network Issues</h2>
+                <p>Three problems were identified and solved:</p>
+                <table class="fix-table">
+                    <thead>
+                        <tr><th>Problem</th><th>Cause</th><th>Solution</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>IPv6 Connectivity Failure</strong></td>
+                            <td>Network doesn't support IPv6</td>
+                            <td><code>--edge-ip-version 4</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DNS Resolution Failure</strong></td>
+                            <td>Router DNS slow/unreliable</td>
+                            <td>Set <code>nameserver 1.1.1.1</code> and
+                                <code>8.8.8.8</code> in
+                                <code>/etc/resolv.conf</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>UDP Port 7844 Blocked</strong></td>
+                            <td>ISP/router blocks QUIC (UDP)</td>
+                            <td><code>--protocol http2</code> (uses TCP port
+                                443)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p> The first solution forces the tunnel to use IPv4 instead of
+                    IPv6, again I wanted to avoid messing around with my router.
+                    If it came with IPv4 only out of the box that is what I am
+                    going with to start.
+                </p>
+                <p> The second solution uses public DNS servers (Cloudflare and
+                    Google) instead of relying
+                    on the router's DNS, which may not always work great. This
+                    ensures that the tunnel can resolve domain names quickly and
+                    consistently.
+                </p>
+                <p>
+                    The third solution switches the tunnel to use HTTP/2 over
+                    TCP
+                    port 443 instead of QUIC over UDP port 7844, which may be
+                    blocked by some ISPs or routers. This ensures that the
+                    tunnel can establish a connection even if UDP is blocked.
+                </p>
+                <p><strong>Permanent DNS fix</strong> (via NetworkManager):</p>
+                <div class="command-block">
+                    <span class="prompt"># For WiFi</span><br>
+                    WIFI_NAME=$(nmcli -t -f NAME,TYPE con show --active | grep
+                    wifi | cut -d: -f1)<br>
+                    sudo nmcli con mod "$WIFI_NAME" ipv4.dns
+                    "1.1.1.1 8.8.8.8"<br>
+                    sudo nmcli con mod "$WIFI_NAME" ipv4.ignore-auto-dns yes<br>
+                    sudo nmcli con down "$WIFI_NAME" && sudo nmcli con up
+                    "$WIFI_NAME"
+                </div>
+            </section>
+
+            <!-- ===== FINAL WORKING COMMAND ===== -->
+            <section>
+                <h2>Final Working Command</h2>
+                <div class="command-block">
+                    sudo cloudflared --edge-ip-version 4 --protocol http2 tunnel
+                    run --token-file /etc/cloudflared/token
+                </div>
+                <p>This command forces IPv4, uses HTTP/2 (bypassing UDP blocks),
+                    and authenticates with the saved token.</p>
+            </section>
+
+            <hr>
+
+            <!-- ===== POST-TUNNEL: 502 FIX & DNS ===== -->
+            <section>
+                <h2>Post-Tunnel: Fixing 502 Bad Gateway</h2>
+                <p>After the tunnel was healthy, visiting
+                    <code>https://www.geosmin.ca</code> returned a <strong>502
+                        Bad Gateway</strong> error.</p>
+                <p><strong>Cause:</strong> The tunnel was routing to
+                    <code>https://localhost:8080</code>, but Nginx was serving
+                    plain HTTP.</p>
+                <p><strong>Fix:</strong> In Cloudflare Dashboard → Zero Trust →
+                    Networking → Tunnels → edit the public hostname, change the
+                    service from <code>https://localhost:8080</code> to
+                    <code>http://localhost:8080</code>.</p>
+                <div class="highlight-box">
+                    <strong>Why this works:</strong> Cloudflare handles HTTPS
+                    for visitors; the tunnel talks to your Pi over HTTP locally,
+                    which is secure because the tunnel itself is encrypted.
+                </div>
+            </section>
+
+            <section>
+                <h2>Adding the Root Domain (geosmin.ca)</h2>
+                <p><code>https://www.geosmin.ca</code> worked, but
+                    <code>https://geosmin.ca</code> (without www) did not.</p>
+                <p><strong>Fix:</strong> Add a new public hostname with the
+                    subdomain field <strong>blank</strong> and domain
+                    <code>geosmin.ca</code>, pointing to
+                    <code>http://localhost:8080</code>.</p>
+                <p>Now both <code>geosmin.ca</code> and
+                    <code>www.geosmin.ca</code> work.</p>
+            </section>
+
+            <section>
+                <h2>Understanding DNS Records</h2>
+                <p>Since nameservers at the registrar (WHC) now point to
+                    Cloudflare, <strong>all DNS records must be managed in
+                        Cloudflare Dashboard → DNS → Records</strong>.</p>
+                <p>You don't add tunnel records manually in DNS. Instead, adding
+                    a public hostname in the tunnel dashboard automatically
+                    creates the necessary CNAME records pointing to your
+                    tunnel's <code>&lt;UUID&gt;.cfargotunnel.com</code>
+                    address.</p>
+                <p>If you have other records (email MX, SPF, subdomains), copy
+                    them from your registrar's DNS editor and recreate them in
+                    Cloudflare. As this bad boy is now head honcho of the
+                    DNS.</p>
+            </section>
+
+            <section>
+                <h2>Security Considerations</h2>
+                <p>A huge question you should be asking is whether this is
+                    secure and safe. Again, just saying "internet man" told you
+                    to do it and hoping a foreign national isn't spying on you
+                    through your smart fridge is not wise. Don't worry here are
+                    some quick reasons why it is safe.</p>
+                <ul>
+                    <li><strong>Encryption:</strong> Cloudflare handles HTTPS
+                        for visitors; the tunnel is encrypted.</li>
+                    <li><strong>Open Ports:</strong> No open ports on your
+                        router — the tunnel uses outbound connections.</li>
+                    <li><strong>File Access:</strong> Nginx only serves files in
+                        <code>/var/www/geosmin/</code>. Directory listing is
+                        disabled.</li>
+                    <li><strong>SSL:</strong> Cloudflare provides free SSL
+                        certificates.</li>
+                </ul>
+                <p><strong>Optional hardening</strong> for Nginx:</p>
+                <div class="command-block">
+                    <span class="prompt"># Block hidden files</span><br>
+                    location ~ /\. { deny all; }<br><br>
+                    <span class="prompt"># Block sensitive file types</span><br>
+                    location ~*
+                    \.(env|log|sql|sqlite|json|yml|yaml|toml|ini|conf)$ { deny
+                    all; }
+                </div>
+                <p>
+                    Now you can rest easy knowing that your tunnel is secure,
+                    your Nginx server is only serving the intended files, and
+                    your DNS is properly managed through Cloudflare. There may
+                    be other backdoors that are beyond my current scope but if
+                    they want your Raspberry Pi 5 that badly you probably have
+                    bigger problems than a website. The main takeaway is that
+                    this setup is secure for the average user and should be
+                    sufficient for hosting a personal website.
+                </p>
+            </section>
+
+            <!-- ===== SUMMARY TABLE ===== -->
+            <section>
+                <h2>Final Working Setup</h2>
+                <table class="fix-table">
+                    <thead>
+                        <tr><th>Component</th><th>Status</th><th>Details</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Cloudflare Tunnel</td><td>✅
+                                Running</td><td>Healthy, active, 2 routes (www
+                                and root)</td></tr>
+                        <tr><td>Nginx</td><td>✅ Running</td><td>Listening on
+                                port 8080</td></tr>
+                        <tr><td>Website</td><td>✅
+                                Serving</td><td><code>/var/www/geosmin/index.html</code></td></tr>
+                        <tr><td>www.geosmin.ca</td><td>✅ Working</td><td>Route
+                                configured</td></tr>
+                        <tr><td>geosmin.ca</td><td>✅ Working</td><td>Route
+                                configured</td></tr>
+                        <tr><td>DNS</td><td>✅ Managed</td><td>All records in
+                                Cloudflare Dashboard</td></tr>
+                        <tr><td>SSL</td><td>✅ Handled</td><td>Cloudflare
+                                provides certificates</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ===== USEFUL COMMANDS ===== -->
+            <section>
+                <h2>Useful Commands</h2>
+                <div class="command-block">
+                    <span class="prompt"># Check tunnel status</span><br>
+                    sudo systemctl status cloudflared<br><br>
+                    <span class="prompt"># Check Nginx status</span><br>
+                    sudo systemctl status nginx<br><br>
+                    <span class="prompt"># Check Nginx is listening on port
+                        8080</span><br>
+                    sudo netstat -tlnp | grep 8080<br><br>
+                    <span class="prompt"># Test locally</span><br>
+                    curl http://localhost:8080<br><br>
+                    <span class="prompt"># Check tunnel logs</span><br>
+                    sudo journalctl -u cloudflared -n 30 --no-pager<br><br>
+                    <span class="prompt"># Check Nginx logs</span><br>
+                    sudo tail -f /var/log/nginx/error.log
+                </div>
+            </section>
+
+            <!-- ===== KEY TAKEAWAYS ===== -->
+            <section>
+                <h2>Key Takeaways</h2>
+                <ul>
+                    <li><strong>IPv6 isn't always available</strong> — forcing
+                        IPv4 is a common and necessary fix for many home
+                        networks.</li>
+                    <li><strong>DNS matters</strong> — public DNS (1.1.1.1) is
+                        more reliable than router DNS.</li>
+                    <li><strong>Protocol choice matters</strong> — HTTP/2 works
+                        where QUIC is blocked.</li>
+                    <li><strong>Error 1033 is good</strong> — it means the
+                        tunnel works, you just need a web server.</li>
+                    <li><strong>Token authentication</strong> — using the token
+                        directly (rather than a config file) is a simpler
+                        approach that works well.</li>
+                    <li><strong>Tunnel service must use HTTP locally</strong> —
+                        <code>http://localhost:8080</code>, not HTTPS.</li>
+                    <li><strong>Add routes for both www and root domains
+                            separately.</strong></li>
+                    <li><strong>DNS is now managed in Cloudflare</strong>, not
+                        your registrar.</li>
+                </ul>
+            </section>
+
+            <!-- ===== WHAT'S NEXT ===== -->
+            <section>
+                <h2>What's Next?</h2>
+                <p>Once your tunnel is stable, you can:</p>
+                <ol>
+                    <li>Install Nginx: <code>sudo apt install nginx
+                            -y</code></li>
+                    <li>Configure Nginx to serve your site (update
+                        <code>/etc/nginx/sites-available/default</code>).</li>
+                    <li>Clone your GitHub Pages repository: <code>git clone
+                            https://github.com/your-username/your-repo.git
+                            /var/www/your-site</code></li>
+                    <li>Set up auto-deployment (GitHub Actions or webhook).</li>
+                    <li>Add monitoring (e.g., uptime checks).</li>
+                </ol>
+            </section>
+
+            <!-- ===== REFERENCES ===== -->
+            <section>
+                <h2>References</h2>
+                <ul>
+                    <li><a
+                            href="https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/"
+                            target="_blank" rel="noopener noreferrer">Cloudflare
+                            Tunnel Documentation</a></li>
+                    <li><a href="https://1.1.1.1/" target="_blank"
+                            rel="noopener noreferrer">Cloudflare Public
+                            DNS</a></li>
+                    <li><a href="https://www.raspberrypi.com/documentation/"
+                            target="_blank" rel="noopener noreferrer">Raspberry
+                            Pi Documentation</a></li>
+                    <li><a href="https://github.com/jamesxbunker-cpu/Geosmin"
+                            target="_blank" rel="noopener noreferrer">Project
+                            Repository (Geosmin)</a></li>
+                </ul>
+            </section>
+
+                        <section>
+                <h2>Links</h2>
+                <ul>
+                    <li>
+                        Project repository:
+                        <a href="https://github.com/jamesxbunker-cpu/Geosmin"
+                            target="_blank" rel="noopener noreferrer">
+                            GitHub Repository
+                        </a>
+                    </li>
+                    <li>
+                        Related project:
+                        <a href="https://geosmin.ca/projects/project1">
+                            geosmin.ca/projects/project1
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </main>
+    </body>
+</html>
