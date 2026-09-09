@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raspberry Pi 5 System Monitor · Project Summary</title>
+    <meta name="title" content="Raspberry Pi 5 System Monitor with C & JSON" />
+    <meta name="description" content="Complete project documentation for monitoring Raspberry Pi 5 system metrics including CPU, memory, disk, fan speed, and network stats using C and Nginx." />
+    <meta name="author" content="James Bunker" />
+    <meta name="date" content="September 8, 2026" />
+    <meta name="keywords" content="Raspberry Pi, system monitor, C programming, JSON, Nginx, fan speed, sensors" />
+    <link rel="canonical" href="https://geosmin.ca/projects/system-monitor/system-monitor-summary.html" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../project.css" />
+    <link rel="stylesheet" href="../../style.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" sizes="any">
+
+    <script src="../../site_header.js"></script>
+</head>
+
+<body>
+
+    <site-header></site-header>
+    <div class="project-content">
+        <header>
+            <h1>Raspberry Pi 5 System Monitor <br style="display: none;" /><span style="font-weight:400; font-size:1.6rem;">C-based Performance Dashboard</span></h1>
+            <p class="subtitle">Real-time system metrics collected in C, served as JSON, and displayed on your website.</p>
+            <p class="metadata">
+                September 8, 2026 &nbsp; · &nbsp; Project &nbsp; · &nbsp; Status: <span class="badge">✅ Fully Operational</span>
+            </p>
+        </header>
+
+        <hr />
+
+        <!-- QUICK OVERVIEW -->
+        <section>
+            <h2>Project Overview</h2>
+            <div class="summary-grid">
+                <div class="item"><span class="label">Project</span> <span class="value">Raspberry Pi 5 System Monitor</span></div>
+                <div class="item"><span class="label">Language</span> <span class="value">C with JSON output</span></div>
+                <div class="item"><span class="label">Purpose</span> <span class="value">Collect and serve system metrics for web dashboard</span></div>
+                <div class="item"><span class="label">Update Interval</span> <span class="value">Every 10 seconds (systemd timer)</span></div>
+                <div class="item"><span class="label">Data Format</span> <span class="value">JSON via /data/system_metrics.json</span></div>
+                <div class="item"><span class="label">Status</span> <span class="value"><span class="badge">✅ Fully Operational</span></span></div>
+            </div>
+        </section>
+
+        <!-- ====== ARCHITECTURE DIAGRAM ====== -->
+        <section>
+            <h2>Architecture</h2>
+            <div class="arch-container">
+                <div class="arch-diagram">
+
+                    <!-- C Monitor -->
+                    <div class="arch-node rpi">
+                        <span class="node-title">⚙️ C System Monitor</span>
+                        <div class="detail-list">
+                            <span class="item">Reads /proc, /sys, thermal zones</span>
+                            <span class="item">Collects 12+ system metrics</span>
+                            <span class="item">Outputs structured JSON</span>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">⬇ &nbsp;<span class="dim">────</span> &nbsp;⬇</div>
+
+                    <!-- System Metrics -->
+                    <div class="arch-node">
+                        <span class="node-title">📊 System Metrics</span>
+                        <div class="detail-list">
+                            <span class="item">CPU: usage, temp, frequency, cores</span>
+                            <span class="item">Memory: total, used, free, usage %</span>
+                            <span class="item">Disk: total, used, free, usage %</span>
+                            <span class="item">Fan: speed RPM (Armor Lite V5)</span>
+                            <span class="item">Network: RX/TX bytes</span>
+                            <span class="item">Processes: total and running</span>
+                            <span class="item">System: uptime, hostname, OS version</span>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">⬇ &nbsp;<span class="dim">────</span> &nbsp;⬇</div>
+
+                    <!-- JSON File -->
+                    <div class="arch-node">
+                        <span class="node-title">📄 JSON Data File</span>
+                        <div class="detail-list">
+                            <span class="item">/var/www/geosmin/data/system_metrics.json</span>
+                            <span class="item">Updated every 10 seconds</span>
+                            <span class="item">Served via Nginx /data/ endpoint</span>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">⬇ &nbsp;<span class="dim">────</span> &nbsp;⬇</div>
+
+                    <!-- Nginx -->
+                    <div class="arch-node">
+                        <span class="node-title">🌐 Nginx Web Server</span>
+                        <div class="detail-list">
+                            <span class="item">Serves JSON via /data/ alias</span>
+                            <span class="item">Root: /var/www/geosmin/Geosmin</span>
+                            <span class="item">Access: geosmin.ca/data/system_metrics.json</span>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">⬇ &nbsp;<span class="dim">────</span> &nbsp;⬇</div>
+
+                    <!-- Frontend -->
+                    <div class="arch-node visitor">
+                        <span class="node-title">🎨 Frontend Dashboard</span>
+                        <div class="detail-list">
+                            <span class="item">JavaScript fetches JSON every 5 seconds</span>
+                            <span class="item">Displays real-time metrics</span>
+                            <span class="item">Auto-updating dashboard</span>
+                        </div>
+                    </div>
+
+                    <!-- divider line -->
+                    <div style="color:#2d3a52; padding:0.3rem 0; font-size:0.8rem; letter-spacing:6px;">━ ━ ━ ━ ━ ━ ━ ━ ━ ━ ━</div>
+
+                    <!-- Systemd Timer -->
+                    <div class="arch-node cloud">
+                        <span class="node-title">⏱️ Systemd Timer</span>
+                        <div class="detail-list">
+                            <span class="item">Runs every 10 seconds</span>
+                            <span class="item">Automatic restart on failure</span>
+                            <span class="item">Proper logging</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- SYSTEM METRICS -->
+        <section>
+            <h2>Metrics Collected</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Category</th><th>Metric</th><th>Source</th></tr></thead>
+                    <tbody>
+                        <tr><td rowspan="4">CPU</td><td>Usage %</td><td>/proc/stat</td></tr>
+                        <tr><td>Temperature °C</td><td>/sys/class/thermal/thermal_zone0/temp</td></tr>
+                        <tr><td>Frequency MHz</td><td>/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq</td></tr>
+                        <tr><td>Core Count</td><td>sysconf(_SC_NPROCESSORS_ONLN)</td></tr>
+                        <tr><td rowspan="4">Memory</td><td>Total MB</td><td>/proc/meminfo</td></tr>
+                        <tr><td>Used MB</td><td>Calculation</td></tr>
+                        <tr><td>Free MB</td><td>/proc/meminfo</td></tr>
+                        <tr><td>Usage %</td><td>Calculation</td></tr>
+                        <tr><td rowspan="3">Disk</td><td>Total GB</td><td>statvfs()</td></tr>
+                        <tr><td>Used GB</td><td>statvfs()</td></tr>
+                        <tr><td>Usage %</td><td>Calculation</td></tr>
+                        <tr><td>Fan</td><td>Speed RPM</td><td>/sys/devices/platform/cooling_fan/hwmon/hwmon1/fan1_input</td></tr>
+                        <tr><td rowspan="2">Network</td><td>RX Bytes</td><td>/proc/net/dev</td></tr>
+                        <tr><td>TX Bytes</td><td>/proc/net/dev</td></tr>
+                        <tr><td>Processes</td><td>Total / Running</td><td>/proc/[pid]/stat</td></tr>
+                        <tr><td>System</td><td>Uptime Hours</td><td>sysinfo()</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PHASE 1: C Program -->
+        <section>
+            <h2>Phase 1: C System Monitor Program</h2>
+            <h3>Key Code Structure</h3>
+            <pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;time.h&gt;
+#include &lt;sys/sysinfo.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;ctype.h&gt;
+#include &lt;sys/statvfs.h&gt;
+
+#define DATA_DIR "/var/www/geosmin/data"
+#define DATA_FILE "/var/www/geosmin/data/system_metrics.json"
+
+typedef struct {
+    // CPU
+    double cpu_usage;
+    double cpu_temp;
+    double cpu_freq_mhz;
+    int cpu_cores;
+    
+    // Memory
+    unsigned long total_mem_mb;
+    unsigned long free_mem_mb;
+    unsigned long used_mem_mb;
+    double mem_usage_percent;
+    
+    // Disk
+    unsigned long total_disk_gb;
+    unsigned long used_disk_gb;
+    unsigned long free_disk_gb;
+    double disk_usage_percent;
+    
+    // Fan
+    int fan_speed_rpm;
+    
+    // System
+    double uptime_hours;
+    time_t timestamp;
+    char hostname[256];
+    char os_version[128];
+    
+    // Processes
+    int total_processes;
+    int running_processes;
+    
+    // Network
+    unsigned long rx_bytes;
+    unsigned long tx_bytes;
+    
+    // GPU
+    double gpu_temp;
+} SystemMetrics;</code></pre>
+
+            <h4>CPU Usage Calculation</h4>
+            <pre><code>double get_cpu_usage(unsigned long* prev_idle, unsigned long* prev_total) {
+    unsigned long user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
+    unsigned long total;
+
+    FILE *fp = fopen("/proc/stat", "r");
+    if (!fp) return -1.0;
+
+    fscanf(fp, "cpu  %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
+           &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice);
+    fclose(fp);
+
+    total = user + nice + system + idle + iowait + irq + softirq + steal + guest + guest_nice;
+
+    if (*prev_total == 0) {
+        *prev_idle = idle;
+        *prev_total = total;
+        return 0.0;
+    }
+
+    unsigned long diff_idle = idle - *prev_idle;
+    unsigned long diff_total = total - *prev_total;
+    double cpu_usage = 100.0 * (1.0 - (double)diff_idle / diff_total);
+
+    *prev_idle = idle;
+    *prev_total = total;
+
+    return cpu_usage;
+}</code></pre>
+
+            <h4>Fan Speed Detection (Armor Lite V5)</h4>
+            <pre><code>int get_fan_speed() {
+    int speed = read_file_int("/sys/devices/platform/cooling_fan/hwmon/hwmon1/fan1_input");
+    if (speed < 0) {
+        speed = read_file_int("/sys/class/hwmon/hwmon0/fan1_input");
+    }
+    return speed;
+}</code></pre>
+
+            <h4>JSON Output</h4>
+            <pre><code>void write_json(SystemMetrics metrics) {
+    FILE *fp = fopen(DATA_FILE, "w");
+    if (!fp) {
+        fprintf(stderr, "Error opening %s for writing\n", DATA_FILE);
+        return;
+    }
+
+    fprintf(fp, "{\n");
+    fprintf(fp, "  \"timestamp\": %ld,\n", metrics.timestamp);
+    fprintf(fp, "  \"hostname\": \"%s\",\n", metrics.hostname);
+    fprintf(fp, "  \"os\": \"%s\",\n", metrics.os_version);
+    fprintf(fp, "  \"uptime_hours\": %.2f,\n", metrics.uptime_hours);
+    fprintf(fp, "  \"cpu\": {\n");
+    fprintf(fp, "    \"usage_percent\": %.2f,\n", metrics.cpu_usage);
+    fprintf(fp, "    \"temperature_c\": %.2f,\n", metrics.cpu_temp);
+    fprintf(fp, "    \"frequency_mhz\": %.2f,\n", metrics.cpu_freq_mhz);
+    fprintf(fp, "    \"cores\": %d\n", metrics.cpu_cores);
+    fprintf(fp, "  },\n");
+    // ... rest of JSON
+    fclose(fp);
+}</code></pre>
+
+            <h3>Compile the Program</h3>
+            <pre><code>gcc -o system_monitor system_monitor.c -lm
+chmod +x system_monitor</code></pre>
+        </section>
+
+        <!-- PHASE 2: Nginx Configuration -->
+        <section>
+            <h2>Phase 2: Nginx Configuration</h2>
+            <p><strong>Config</strong> <span class="file-path">/etc/nginx/sites-available/default</span></p>
+            <div class="script-container">server {
+    listen 8080 default_server;
+    listen [::]:8080 default_server;
+
+    root /var/www/geosmin/Geosmin;
+    index index.html index.htm;
+
+    server_name _;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location /data/ {
+        alias /var/www/geosmin/data/;
+        autoindex off;
+        add_header Access-Control-Allow-Origin "*";
+    }
+}</div>
+            <p><strong>Reload Nginx</strong></p>
+            <pre><code>sudo nginx -t
+sudo systemctl reload nginx</code></pre>
+        </section>
+
+        <!-- PHASE 3: Systemd Timer -->
+        <section>
+            <h2>Phase 3: Systemd Timer (Every 10 Seconds)</h2>
+            
+            <h4>Service File</h4>
+            <p><span class="file-path">/etc/systemd/system/system-monitor.service</span></p>
+            <div class="script-container">[Unit]
+Description=System Monitor Service
+After=network.target
+
+[Service]
+Type=simple
+User=geosminserver
+WorkingDirectory=/home/geosminserver/raspberrypi5-server-monitoring
+ExecStart=/home/geosminserver/raspberrypi5-server-monitoring/system_monitor
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/geosminserver/raspberrypi5-server-monitoring/service.log
+StandardError=append:/home/geosminserver/raspberrypi5-server-monitoring/service-error.log
+
+[Install]
+WantedBy=multi-user.target</div>
+
+            <h4>Timer File</h4>
+            <p><span class="file-path">/etc/systemd/system/system-monitor.timer</span></p>
+            <div class="script-container">[Unit]
+Description=Run System Monitor every 10 seconds
+Requires=system-monitor.service
+
+[Timer]
+OnBootSec=10
+OnUnitActiveSec=10
+Unit=system-monitor.service
+
+[Install]
+WantedBy=timers.target</div>
+
+            <h4>Enable and Start</h4>
+            <pre><code>sudo systemctl daemon-reload
+sudo systemctl enable system-monitor.timer
+sudo systemctl enable system-monitor.service
+sudo systemctl start system-monitor.timer
+sudo systemctl status system-monitor.timer</code></pre>
+
+            <h4>Alternative: Cron (Every Minute)</h4>
+            <div class="script-container"># crontab -l
+PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+SHELL=/bin/bash
+HOME=/home/geosminserver
+USER=geosminserver
+
+* * * * * /home/geosminserver/raspberrypi5-server-monitoring/system_monitor
+@reboot /home/geosminserver/raspberrypi5-server-monitoring/system_monitor</div>
+        </section>
+
+        <!-- PHASE 4: Frontend Dashboard -->
+        <section>
+            <h2>Phase 4: Frontend Dashboard</h2>
+            <h3>JavaScript Auto-Update</h3>
+            <pre><code>async function loadMetrics() {
+    try {
+        const response = await fetch('/data/system_metrics.json');
+        const data = await response.json();
+        
+        // CPU
+        document.getElementById('cpu-temp').textContent = data.cpu.temperature_c.toFixed(1) + '°C';
+        document.getElementById('cpu-usage').textContent = data.cpu.usage_percent.toFixed(1) + '%';
+        document.getElementById('cpu-freq').textContent = data.cpu.frequency_mhz.toFixed(0) + ' MHz';
+        
+        // Fan
+        document.getElementById('fan-speed').textContent = data.fan.speed_rpm + ' RPM';
+        
+        // Memory
+        document.getElementById('mem-usage').textContent = data.memory.usage_percent.toFixed(1) + '%';
+        document.getElementById('mem-used').textContent = data.memory.used_mb + ' MB';
+        document.getElementById('mem-total').textContent = data.memory.total_mb + ' MB';
+        
+        // Disk
+        document.getElementById('disk-usage').textContent = data.disk.usage_percent.toFixed(1) + '%';
+        document.getElementById('disk-used').textContent = data.disk.used_gb + ' GB';
+        document.getElementById('disk-total').textContent = data.disk.total_gb + ' GB';
+        
+        // Uptime
+        const hours = Math.floor(data.uptime_hours);
+        const minutes = Math.floor((data.uptime_hours - hours) * 60);
+        document.getElementById('uptime').textContent = hours + 'h ' + minutes + 'm';
+        
+        // Processes
+        document.getElementById('processes').textContent = data.processes.total;
+        document.getElementById('running-processes').textContent = data.processes.running;
+        
+        // Network
+        document.getElementById('rx-bytes').textContent = formatBytes(data.network.rx_bytes);
+        document.getElementById('tx-bytes').textContent = formatBytes(data.network.tx_bytes);
+        
+        // Last update
+        document.getElementById('last-update').textContent = new Date(data.timestamp * 1000).toLocaleTimeString();
+        
+    } catch (error) {
+        console.error('Error loading metrics:', error);
+    }
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Refresh every 5 seconds
+loadMetrics();
+setInterval(loadMetrics, 5000);</code></pre>
+        </section>
+
+        <!-- FINAL SUMMARY -->
+        <section>
+            <h2>Final Working Setup Summary</h2>
+            <div class="status-grid">
+                <div><strong>C Monitor</strong> ✅ Running <br /><span style="font-size:0.9rem; color:#334155;">Collects 12+ metrics</span></div>
+                <div><strong>JSON Output</strong> ✅ Generated <br /><span style="font-size:0.9rem; color:#334155;">/var/www/geosmin/data/</span></div>
+                <div><strong>Nginx</strong> ✅ Serving <br /><span style="font-size:0.9rem; color:#334155;">/data/ endpoint</span></div>
+                <div><strong>Systemd Timer</strong> ✅ Every 10s <br /><span style="font-size:0.9rem; color:#334155;">Auto-restart</span></div>
+                <div><strong>Frontend</strong> ✅ Dashboard <br /><span style="font-size:0.9rem; color:#334155;">Auto-updates every 5s</span></div>
+                <div><strong>Fan Speed</strong> ✅ Working <br /><span style="font-size:0.9rem; color:#334155;">Armor Lite V5</span></div>
+                <div><strong>Permissions</strong> ✅ Fixed <br /><span style="font-size:0.9rem; color:#334155;">geosminserver:www-data</span></div>
+                <div><strong>Logging</strong> ✅ Active <br /><span style="font-size:0.9rem; color:#334155;">service.log + error.log</span></div>
+            </div>
+        </section>
+
+        <!-- TESTING & TROUBLESHOOTING -->
+        <section>
+            <h2>Testing &amp; Verification</h2>
+            <div class="grid-2">
+                <div>
+                    <h4>Check service status</h4>
+                    <pre><code>sudo systemctl status system-monitor.service
+sudo systemctl status system-monitor.timer
+sudo systemctl status nginx</code></pre>
+                </div>
+                <div>
+                    <h4>Manual run test</h4>
+                    <pre><code>./system_monitor
+cat /var/www/geosmin/data/system_metrics.json</code></pre>
+                </div>
+                <div>
+                    <h4>Check logs</h4>
+                    <pre><code>sudo journalctl -u system-monitor.service -f
+tail -20 service.log</code></pre>
+                </div>
+                <div>
+                    <h4>Verify JSON</h4>
+                    <pre><code>curl http://localhost:8080/data/system_metrics.json
+curl https://www.geosmin.ca/data/system_metrics.json</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- TROUBLESHOOTING TABLE -->
+        <section>
+            <h2>Troubleshooting Guide</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Issue</th><th>Likely Cause</th><th>Fix</th></tr></thead>
+                    <tbody>
+                        <tr><td>Fan speed shows -1</td><td>Fan path not found</td><td>Find with: sudo find /sys -name "*fan*"</td></tr>
+                        <tr><td>Permission denied writing JSON</td><td>Wrong ownership</td><td>sudo chown -R geosminserver:www-data /var/www/geosmin/data</td></tr>
+                        <tr><td>Service fails to start</td><td>Program path incorrect</td><td>Use absolute path in service file</td></tr>
+                        <tr><td>CPU usage always 0%</td><td>Prev values not persisted</td><td>Use static variables in get_cpu_usage()</td></tr>
+                        <tr><td>JSON not updating</td><td>Timer not running</td><td>sudo systemctl status system-monitor.timer</td></tr>
+                        <tr><td>Nginx returns 404 for /data/</td><td>Alias path wrong</td><td>Check Nginx config and permissions</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- KEY FILES -->
+        <section>
+            <h2>Key File Locations</h2>
+            <ul style="columns:2; list-style:square; margin-left:1.5rem;">
+                <li><span class="file-path">/home/geosminserver/raspberrypi5-server-monitoring/system_monitor</span> – C binary</li>
+                <li><span class="file-path">/home/geosminserver/raspberrypi5-server-monitoring/system_monitor.c</span> – Source code</li>
+                <li><span class="file-path">/var/www/geosmin/data/system_metrics.json</span> – JSON output</li>
+                <li><span class="file-path">/etc/systemd/system/system-monitor.service</span> – Service file</li>
+                <li><span class="file-path">/etc/systemd/system/system-monitor.timer</span> – Timer file</li>
+                <li><span class="file-path">/etc/nginx/sites-available/default</span> – Nginx config</li>
+                <li><span class="file-path">/home/geosminserver/raspberrypi5-server-monitoring/service.log</span> – Log</li>
+                <li><span class="file-path">/home/geosminserver/raspberrypi5-server-monitoring/service-error.log</span> – Error log</li>
+            </ul>
+        </section>
+
+        <!-- AUTOMATED -->
+        <section>
+            <h2>What's Fully Automated</h2>
+            <ul class="checklist">
+                <li>System metrics collected every 10 seconds</li>
+                <li>JSON file generated and updated automatically</li>
+                <li>Service restarts automatically on failure</li>
+                <li>Starts on system boot</li>
+                <li>Nginx serves JSON via /data/ endpoint</li>
+                <li>Frontend dashboard auto-updates every 5 seconds</li>
+                <li>Logging to service.log and error.log</li>
+                <li>Permissions handled automatically</li>
+            </ul>
+        </section>
+
+        <!-- FUTURE IMPROVEMENTS -->
+        <section>
+            <h2>Future Improvements (Optional)</h2>
+            <ul>
+                <li><strong>WebSocket</strong> – Real-time push instead of polling</li>
+                <li><strong>Historical Data</strong> – Store metrics in time-series database (InfluxDB)</li>
+                <li><strong>Grafana Dashboard</strong> – Professional visualization</li>
+                <li><strong>Alerts</strong> – Email notifications for high CPU/temp</li>
+                <li><strong>Network Speed</strong> – Calculate MB/s instead of total bytes</li>
+                <li><strong>GPU Memory</strong> – Add GPU memory usage if available</li>
+                <li><strong>Log Rotation</strong> – Prevent logs from growing too large</li>
+            </ul>
+        </section>
+
+        <!-- COMMANDS -->
+        <section>
+            <h2>Key Commands Reference</h2>
+            <div class="cmd-grid">
+                <div><span class="cmd">./system_monitor</span> – Run once</div>
+                <div><span class="cmd">sudo systemctl start system-monitor.timer</span> – Start timer</div>
+                <div><span class="cmd">sudo systemctl status system-monitor.service</span> – Check service</div>
+                <div><span class="cmd">sudo journalctl -u system-monitor.service -f</span> – Live logs</div>
+                <div><span class="cmd">tail -f service.log</span> – Watch output log</div>
+                <div><span class="cmd">cat /var/www/geosmin/data/system_metrics.json</span> – View JSON</div>
+                <div><span class="cmd">curl localhost:8080/data/system_metrics.json</span> – Test Nginx</div>
+                <div><span class="cmd">sudo systemctl reload nginx</span> – Reload Nginx</div>
+                <div><span class="cmd">gcc -o system_monitor system_monitor.c -lm</span> – Compile</div>
+                <div><span class="cmd">sudo find /sys -name "*fan*"</span> – Find fan path</div>
+            </div>
+        </section>
+
+        <!-- RECENT FIXES -->
+        <section>
+            <h2>Recent Fixes Applied</h2>
+            <ul style="columns:2; list-style:square; margin-left:1.5rem;">
+                <li>2026-09-08: Fan speed detection – added multiple paths</li>
+                <li>2026-09-08: CPU usage – fixed static variables for proper calculation</li>
+                <li>2026-09-08: Permission denied – chown geosminserver:www-data</li>
+                <li>2026-09-08: JSON write error – created data directory</li>
+                <li>2026-09-08: Service not starting – fixed absolute paths</li>
+                <li>2026-09-08: Timer not running – enabled and started correctly</li>
+                <li>2026-09-08: Process count – fixed PID detection in /proc</li>
+                <li>2026-09-08: Disk calculation – fixed overflow with proper type casting</li>
+            </ul>
+            <div class="status-card">✅ Project Status: Complete and Fully Operational</div>
+        </section>
+
+        <hr />
+        <p style="text-align:center; color:#475569;">For full details, see the <a href="https://github.com/jamesxbunker-cpu/Geosmin" target="_blank">GitHub repository</a></p>
+
+        <footer>
+            © 2026 James Bunker · <a href="https://geosmin.ca">geosmin.ca</a>
+        </footer>
+    </div>
+</body>
+
+</html>
