@@ -2,53 +2,235 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Geosmin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Geosmin · home</title>
     <link rel="stylesheet" href="style.css" />
     <script src="site_header.js"></script>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
-      sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" sizes="any" />
   </head>
   <body>
 
-    <!-- ========== STATIC HEADER BAR with TAB OPTIONS ========== -->
-    <site-header> </site-header>
+    <site-header></site-header>
 
-    <!-- ========== MAIN CONTENT (demo layout) ========== -->
     <main class="container">
+
+      <!-- HERO -->
       <div class="hero">
         <h1>Welcome to Geosmin</h1>
-        <p>This site is currently a work in progress, come back soon!</p>
+        <p>
+          There's a word for the smell of freshly turned earth —
+          <em>geosmin</em> —
+          the scent that lingers after rain.<br> <br> This site is named after it because
+          there is a beauty to what follows the rain: things that grew quietly,
+          things that surfaced slowly, things that were always there but only
+          now noticed. <br> <br> Projects, notes, and small experiments by James Bunker,
+          kept here so they don't get lost.
+        </p>
       </div>
 
-      <!-- example blog cards -->
+      <!-- LATEST HIGHLIGHTS -->
+      <div class="latest-grid">
+        <section class="latest-block" id="latestPostBlock">
+          <span class="latest-label">Latest Post</span>
+          <p class="latest-loading">Loading…</p>
+        </section>
+
+        <section class="latest-block" id="latestProjectBlock">
+          <span class="latest-label">Latest Project</span>
+          <p class="latest-loading">Loading…</p>
+        </section>
+      </div>
+
+      <!-- CARD GRID -->
       <div class="card-grid">
+
         <article class="post-card">
           <h3>Splash</h3>
           <div class="meta">
-            <span> September 6, 2026</span>
-            <span> 4 min read</span>
-            <span> 12</span>
+            <span>September 6, 2026</span>
+            <span>4 min read</span>
+            <span>12</span>
           </div>
-          <p>1:50p.m.</p>
-          <span class="tag">#first</span>
-          <span class="tag" style="margin-left: 6px;">#template</span>
+          <p>1:50 p.m. — TODO</p>
+          <div>
+            <span class="tag">#first</span>
+            <span class="tag" style="margin-left: 6px;">#template</span>
+          </div>
         </article>
+
       </div>
 
-      <div class="footer-note">
-        header stays fixed
-        <i
-          style="font-size: 0.3rem; vertical-align: middle; margin: 0 6px;"></i>
-        ready for your content
-      </div>
+      <img src="favicon.svg" alt="Geosmin Logo" />
     </main>
 
-    <!-- ========== STATIC FOOTER ========== -->
     <footer class="site-footer">
       <div class="footer-inner">
         <p>© 2026 Geosmin. All rights reserved.</p>
       </div>
     </footer>
 
+    <!-- LATEST POST + PROJECT LOADER -->
+    <script>
+  (function() {
+    "use strict";
+
+    // ----- CONFIG -----
+    const POST_FOLDER    = 'posts';
+    const PROJECT_FOLDER = 'projects';
+    const POST_FILE      = 'post_index.html';
+    const PROJECT_FILE   = 'project_index.html';
+    const POST_PREFIX    = 'post';      // posts/post1/, posts/post2/ ...
+    const PROJECT_PREFIX = 'project';   // projects/project1/, projects/project2/ ...
+    const MAX_ITEMS      = 50;
+
+    const latestPostBlock    = document.getElementById('latestPostBlock');
+    const latestProjectBlock = document.getElementById('latestProjectBlock');
+
+    // ----- META PARSING -----
+    function parseMeta(htmlText, folderPath) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+
+      function findMeta(name) {
+        const tag = doc.querySelector('meta[name="' + name + '"]');
+        if (!tag) return '';
+        const content = tag.getAttribute('content');
+        return content ? content : '';
+      }
+
+      const tagsString = findMeta('keywords') || '';
+      const tagsArray  = tagsString.split(',');
+      const cleanedTags = [];
+      for (let i = 0; i < tagsArray.length; i++) {
+        const t = tagsArray[i].trim();
+        if (t.length > 0) cleanedTags.push(t);
+      }
+
+      return {
+        title:       findMeta('title')       || 'Untitled',
+        description: findMeta('description') || '',
+        author:      findMeta('author')      || '',
+        date:        findMeta('date')        || '',
+        tags:        cleanedTags,
+        folder:      folderPath
+      };
+    }
+
+    // ----- LOAD ONE ITEM FROM A FOLDER -----
+    function loadItemFromFolder(folderPath, filename) {
+      return fetch(folderPath + '/' + filename)
+        .then(function(res) {
+          if (!res.ok) return null;
+          return res.text();
+        })
+        .then(function(html) {
+          if (!html) return null;
+          return parseMeta(html, folderPath);
+        })
+        .catch(function() {
+          return null;
+        });
+    }
+
+    // ----- LOAD ALL, PICK NEWEST (highest folder number) -----
+    function loadLatest(folderBase, prefix, filename) {
+      const tasks = [];
+      for (let i = 1; i <= MAX_ITEMS; i++) {
+        const folderPath = folderBase + '/' + prefix + i;
+        const task = loadItemFromFolder(folderPath, filename).then(function(item) {
+          if (item) item.index = i;
+          return item;
+        });
+        tasks.push(task);
+      }
+      return Promise.all(tasks).then(function(all) {
+        const valid = [];
+        for (let i = 0; i < all.length; i++) {
+          if (all[i] !== null) valid.push(all[i]);
+        }
+        valid.sort(function(a, b) {
+          return b.index - a.index;
+        });
+        return valid[0] || null;
+      });
+    }
+
+    // ----- RENDER HIGHLIGHT -----
+    function renderHighlight(blockEl, item, label, filename) {
+      blockEl.innerHTML = '';
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'latest-label';
+      labelEl.textContent = label;
+      blockEl.appendChild(labelEl);
+
+      if (!item) {
+        const empty = document.createElement('p');
+        empty.className = 'latest-loading';
+        empty.textContent = 'Nothing yet.';
+        blockEl.appendChild(empty);
+        return;
+      }
+
+      const h3 = document.createElement('h3');
+      const link = document.createElement('a');
+      link.href = item.folder + '/' + filename;
+      link.textContent = item.title;
+      h3.appendChild(link);
+      blockEl.appendChild(h3);
+
+      if (item.author || item.date) {
+        const meta = document.createElement('div');
+        meta.className = 'latest-meta';
+        if (item.author) {
+          const s = document.createElement('span');
+          s.textContent = item.author;
+          meta.appendChild(s);
+        }
+        if (item.date) {
+          const s = document.createElement('span');
+          s.textContent = item.date;
+          meta.appendChild(s);
+        }
+        blockEl.appendChild(meta);
+      }
+
+      const desc = document.createElement('p');
+      desc.className = 'latest-desc';
+      desc.textContent = item.description || 'No description provided.';
+      blockEl.appendChild(desc);
+
+      if (item.tags && item.tags.length) {
+        const tagsWrap = document.createElement('div');
+        tagsWrap.className = 'latest-tags';
+        for (let i = 0; i < item.tags.length; i++) {
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = '#' + item.tags[i];
+          tagsWrap.appendChild(tag);
+        }
+        blockEl.appendChild(tagsWrap);
+      }
+    }
+
+    // ----- GO -----
+    loadLatest(POST_FOLDER, POST_PREFIX, POST_FILE)
+      .then(function(post) {
+        renderHighlight(latestPostBlock, post, 'Latest Post', POST_FILE);
+      })
+      .catch(function() {
+        renderHighlight(latestPostBlock, null, 'Latest Post', POST_FILE);
+      });
+
+    loadLatest(PROJECT_FOLDER, PROJECT_PREFIX, PROJECT_FILE)
+      .then(function(project) {
+        renderHighlight(latestProjectBlock, project, 'Latest Project', PROJECT_FILE);
+      })
+      .catch(function() {
+        renderHighlight(latestProjectBlock, null, 'Latest Project', PROJECT_FILE);
+      });
+
+  })();
+  </script>
   </body>
 </html>
