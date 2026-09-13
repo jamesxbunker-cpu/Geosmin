@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>STM32 Development in VS Code | James Bunker</title>
+        <meta name="title"
+            content="STM32 Development in VS Code">
+        <meta name="description"
+            content="Complete step-by-step guide: set up VS Code for STM32 development, use CubeMX for peripheral configuration, build with CMake, flash to your board, and manage everything in Git.">
+        <meta name="author" content="James Bunker">
+        <meta name="date" content="September 12, 2026">
+        <meta name="keywords"
+            content="STM32, VS Code, CubeMX, CMake, embedded, STM32CubeCLT, ST-Link, Git">
+        <link rel="canonical"
+            href="https://geosmin.ca/posts/post4/post_index.html">
+        <link rel="stylesheet" href="../post.css">
+        <script src="../../site_header.js"></script>
+        <link rel="stylesheet" href="../../style.css">
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <style>
+        figure { margin: 1.5rem 0; }
+        figcaption { text-align: center; font-style: italic; margin-top: 0.25rem; }
+        pre { overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; max-width: 100%; background: #f5f5f5; padding: 1rem; border-radius: 8px; }
+        code { word-break: break-word; }
+        .highlight-box { background: #f0f7ff; padding: 1rem 1.5rem; border-left: 4px solid #1e90ff; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .fix-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .fix-table th { background: #2c3e50; color: white; padding: 0.5rem; text-align: left; }
+        .fix-table td, .fix-table th { border: 1px solid #ddd; padding: 0.5rem; }
+        .fix-table tr:nth-child(even) { background: #f9f9f9; }
+        .command-block { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; font-family: monospace; overflow-x: auto; }
+        .command-block .prompt { color: #6a9955; }
+        .success { color: #2ecc71; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .step { background: #eaf4fb; padding: 0.2rem 0.8rem; border-radius: 20px; display: inline-block; margin-bottom: 0.5rem; }
+        hr { margin: 2rem 0; }
+    </style>
+    </head>
+    <body>
+        <site-header></site-header>
+        <header class="page-header">
+            <h1>STM32 Development in VS Code</h1>
+            <p class="subtitle">
+                A complete guide to designing and programming
+                STM32 products using VS Code, CubeMX, CMake, and Git (without
+                fighting the IDE). Be water, program inbetween the user code
+                sections.
+            </p>
+            <p class="metadata">
+                September 12, 2026 &nbsp; | &nbsp; STM32, VS Code, Embedded
+            </p>
+        </header>
+        <hr />
+        <main>
+            <!-- ===== INTRODUCTION ===== -->
+            <section>
+                <h2>Introduction</h2>
+                <p class="intro">
+                    After years of using STM32CubeIDE, I wanted the speed and
+                    flexibility of VS Code for embedded work. While CubeIDE is
+                    perfectly good for developing STM32 applications,
+                    it is not fully supported by git (or at least not in a clean
+                    enough way that I was used to). Now I use VS Code for
+                    other non-embedded programming, and it would be really nice
+                    to be able to use it for pretty much all my projects if I
+                    can.
+                    Something about it being a good idea to put all your eggs in
+                    one basket or something?
+
+                    The new issue is
+                    that the STM32 toolchain wasn't designed around VS Code,
+                    so getting it set up took some trial and error. This guide
+                    documents the setup that actually works, including the
+                    fixes for the problems that the average user might miss
+                    during setup.
+                </p>
+                <p>
+                    By the end you'll have a working VS Code environment for
+                    STM32 development, a project structure that plays well
+                    with Git, and a reliable way to flash your code to a real
+                    board.
+                </p>
+                <div class="highlight-box">
+                    <strong>Project Goal:</strong> Set up VS Code to design,
+                    build, flash, and version-control STM32 projects using
+                    CubeMX for peripheral configuration and CMake for the
+                    build system.
+                </div>
+            </section>
+
+            <!-- ===== PHASE 1: INSTALL TOOLS ===== -->
+            <section>
+                <h2>Installing the Toolchain</h2>
+                <p>You need three separate pieces before VS Code can do
+                    anything useful:</p>
+                <table class="fix-table">
+                    <thead>
+                        <tr><th>Tool</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>STM32CubeMX</strong></td>
+                            <td>Graphical peripheral and clock
+                                configuration</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STM32CubeCLT</strong></td>
+                            <td>Command-line toolchain: GCC, CMake, Ninja,
+                                OpenOCD, GDB</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STM32CubeProgrammer</strong></td>
+                            <td>Flashes firmware to the chip via ST-Link</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>Download all three from ST's website. Install them in a
+                    path without spaces or non-ASCII characters, while this is
+                    always good practice in my humble opinion. Especially
+                    considering GCC (which CMAKE uses) tends to parse the spaces
+                    as the user entering two serpeate paths... neat!</p>
+            </section>
+
+            <!-- ===== PHASE 2: VS CODE EXTENSIONS ===== -->
+            <section>
+                <h2>VS Code Extensions</h2>
+                <p>Open VS Code and install these from the Extensions
+                    marketplace. The STMicroelectronics ones are modular, so
+                    you need several:</p>
+                <div class="command-block">
+                    <span class="prompt"># Required</span><br>
+                    STM32Cube Core<br>
+                    STM32CubeIDE for Visual Studio Code<br>
+                    STM32Cube CMake Support<br>
+                    STM32Cube Debug STLink GDB Server<br><br>
+                    <span class="prompt"># Pick one C/C++ engine</span><br>
+                    STM32Cube clangd<br>
+                    <span class="prompt"># OR</span><br>
+                    ms-vscode.cpptools
+                </div>
+                <div class="highlight-box">
+                    <strong>Watch out:</strong> The first search result for
+                    "stm" may be an unrelated third-party extension. We are only
+                    dealing with
+                    the STMicroelectronics-published ones.
+                </div>
+                <p>After installing, the extension will prompt you for the
+                    path to STM32CubeCLT. Point it at the install folder.</p>
+            </section>
+
+            <!-- ===== PHASE 3: CREATE PROJECT ===== -->
+            <section>
+                <h2>Creating the Project in CubeMX</h2>
+                <p>CubeMX is where you configure peripherals, clocks, and pin
+                    assignments. The key setting is the toolchain:</p>
+                <div class="command-block">
+                    <span class="prompt"># In CubeMX</span><br>
+                    Project Manager → Project → Toolchain/IDE →
+                    <strong>CMake</strong>
+                </div>
+                <p>Do <strong>not</strong> pick Makefile or CubeIDE. CMake is
+                    what makes the project portable and Git-friendly.</p>
+                <p>Configure your GPIO, clocks, and peripherals visually.
+                    Give every pin a meaningful label, I shouldn't need to say
+                    this but it is just proper documentation.
+                    Yhese become macros in the generated code, so
+                    <code>LED_GREEN</code> is far better than a raw
+                    <code>GPIO_PIN_5</code>.</p>
+                <p>In <strong>Code Generator</strong>, check
+                    <em>"Generate peripheral initialization as a pair of
+                        '.c/.h' files per peripheral"</em> so your GPIO setup
+                    lives in its own file, this really makes it easier to
+                    manage.</p>
+                <p>Click <strong>GENERATE CODE</strong>.</p>
+            </section>
+
+            <!-- ===== PHASE 4: IMPORT ===== -->
+            <section>
+                <h2>Importing into VS Code</h2>
+                <p>Open the project folder in VS Code, then use the STM32
+                    extension to import it:</p>
+                <div class="command-block">
+                    Ctrl+Shift+P → STM32: Import CMake Project
+                </div>
+                <p>When prompted, select:</p>
+                <ul>
+                    <li><strong>Board / Device:</strong> your exact MCU (e.g.,
+                        STM32G0B1RET6)</li>
+                    <li><strong>Toolchain:</strong> GCC (GNU Compiler
+                        Collection)</li>
+                </ul>
+                <p>Then click <strong>Configure</strong>. This runs CMake and
+                    generates <code>compile_commands.json</code>, which clangd
+                    needs for code intelligence.</p>
+                <div class="highlight-box">
+                    <strong>Common gotcha:</strong> If you clicked Configure
+                    and nothing happened, run
+                    <code>STM32: Setup STM32Cube project</code> from the
+                    Command Palette instead. The button sometimes fails to
+                    trigger until the project has been discovered.
+                </div>
+            </section>
+
+            <!-- ===== PHASE 5: WRITE CODE ===== -->
+            <section>
+                <h2>Writing Application Code</h2>
+                <p>CubeMX generates <code>Core/Src/main.c</code> with empty
+                    <code>while(1)</code> loop and a set of special comment
+                    blocks. <strong>Only write code inside these
+                        blocks.</strong> Anything outside will be overwritten
+                    the
+                    next time you regenerate.</p>
+                <div class="command-block">
+                    <span class="prompt">/* USER CODE BEGIN WHILE */</span><br>
+                    while (1)<br>
+                    {<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port,
+                    LED_GREEN_Pin);<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;HAL_Delay(500);<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<span class="prompt">/* USER CODE
+                        END WHILE */</span><br>
+                    }
+                </div>
+                <p>The <code>LED_GREEN_GPIO_Port</code> and
+                    <code>LED_GREEN_Pin</code> macros come from the labels you
+                    set in CubeMX. If you rename a pin later, the code updates
+                    automatically on the next generation.</p>
+                <p>For anything more substantial such as a sensor driver, a
+                    state machine, create your own <code>.c</code> and
+                    <code>.h</code> files in <code>Core/Src</code> and
+                    <code>Core/Inc</code>. Keep them well away from the
+                    CubeMX-managed files.</p>
+            </section>
+
+            <!-- ===== PHASE 6: BUILD ===== -->
+            <section>
+                <h2>Building the Project</h2>
+                <p>Click the <strong>Build</strong> button in the VS Code
+                    status bar (the wrench icon), or from the Command Palette
+                    run <code>CMake: Build</code>. If you prefer the
+                    terminal:</p>
+                <div class="command-block">
+                    cmake --build build/Debug
+                </div>
+                <p>Output ends with <code>Built target
+                        &lt;your-project&gt;</code>
+                    when successful. The <code>.elf</code> file lands in
+                    <code>build/Debug/</code>.</p>
+            </section>
+
+            <!-- ===== PHASE 7: FLASH ===== -->
+            <section>
+                <h2>Flashing to the Board</h2>
+                <p>This is where most people get stuck. You cannot "run" the
+                    <code>.elf</code> file on your PC. It's compiled for the
+                    ARM Cortex-M core inside the STM32, not your x64 machine.
+                    <em>Side-note: I realllly don't like that x86 is called x86
+                        after the processor and nto x32 like the number of bits
+                        in the instructions.</em>
+                    Windows will either ignore it or offer to open it with an
+                    app. Neither does anything useful.</p>
+                <p>You need to <strong>flash</strong> it. The most reliable
+                    method is the command-line programmer that comes with
+                    STM32CubeProgrammer:</p>
+                <div class="command-block">
+                    STM32_Programmer_CLI -c port=SWD -w
+                    "D:/path/to/build/Debug/your-project.elf" -v -rst
+                </div>
+                <p>Breaking that down:</p>
+                <ul>
+                    <li><code>-c port=SWD</code> — connect to the ST-Link via
+                        SWD</li>
+                    <li><code>-w &lt;file&gt;</code> — write the .elf to
+                        flash</li>
+                    <li><code>-v</code> — verify after writing</li>
+                    <li><code>-rst</code> — reset the chip and run
+                        immediately</li>
+                </ul>
+                <p>If the command isn't on your PATH, use the full path:</p>
+                <div class="command-block">
+                    "C:/Program Files/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI.exe"
+                    -c port=SWD -w "D:/path/to/build/Debug/your-project.elf" -v
+                    -rst
+                </div>
+                <div class="highlight-box">
+                    <strong>✅ Success looks like this:</strong><br>
+                    • <span class="success">Memory Programming ...</span><br>
+                    • <span class="success">File download complete</span><br>
+                    • <span class="success">Application is running</span>
+                </div>
+                <p>If you see "No STM32 target found," the problem is the
+                    USB connection or the ST-Link driver, not your code.</p>
+            </section>
+
+            <!-- ===== PHASE 8: GIT ===== -->
+            <section>
+                <h2>Version Control with Git</h2>
+                <p>Before you commit anything, create a
+                    <code>.gitignore</code> in the project root. Without it,
+                    your repository will be filled with build artifacts that
+                    regenerate every time you compile.</p>
+                <div class="command-block">
+                    <span class="prompt"># Build output</span><br>
+                    build/<br>
+                    *.elf<br>
+                    *.bin<br>
+                    *.hex<br>
+                    *.map<br>
+                    *.o<br>
+                    *.d<br><br>
+                    <span class="prompt"># VS Code personal settings</span><br>
+                    .vscode/settings.json<br>
+                    .vscode/*.log<br>
+                    .vscode/ipch/<br><br>
+                    <span class="prompt"># OS files</span><br>
+                    .DS_Store<br>
+                    Thumbs.db
+                </div>
+                <p>Then initialize and push:</p>
+                <div class="command-block">
+                    git init -b main<br>
+                    git add .<br>
+                    git commit -m "Initial STM32 project"<br>
+                    git remote add origin
+                    https://github.com/YOUR_USERNAME/YOUR_REPO.git<br>
+                    git push -u origin main
+                </div>
+                <p>What gets committed:</p>
+                <ul>
+                    <li><code>.ioc</code> — CubeMX source of truth</li>
+                    <li><code>CMakeLists.txt</code> and
+                        <code>CMakePresets.json</code></li>
+                    <li><code>Core/</code> and <code>Drivers/</code></li>
+                    <li>Linker script and startup assembly</li>
+                    <li><code>.vscode/launch.json</code> (shared debug
+                        config)</li>
+                </ul>
+                <p>What stays out: everything in <code>build/</code>.</p>
+            </section>
+
+            <!-- ===== CHANGING A GPIO ===== -->
+            <section>
+                <h2>Changing a GPIO Later</h2>
+                <p>Never edit the generated initialization code by hand. To
+                    change a pin:</p>
+                <ol>
+                    <li>Open the <code>.ioc</code> file in CubeMX</li>
+                    <li>Change the pin in the Pinout view</li>
+                    <li>Adjust its settings in System Core → GPIO</li>
+                    <li>Click <strong>GENERATE CODE</strong></li>
+                </ol>
+                <p>CubeMX will update <code>MX_GPIO_Init()</code> and the
+                    generated macros. Your code in the <code>USER CODE</code>
+                    blocks survives untouched. This is the entire reason those
+                    blocks exist.</p>
+            </section>
+
+            <!-- ===== SUMMARY TABLE ===== -->
+            <section>
+                <h2>Final Working Setup</h2>
+                <table class="fix-table">
+                    <thead>
+                        <tr><th>Component</th><th>Status</th><th>Details</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>STM32CubeMX</td><td>✅
+                                Installed</td><td>Configured for CMake
+                                output</td></tr>
+                        <tr><td>STM32CubeCLT</td><td>✅
+                                Installed</td><td>Provides GCC, CMake,
+                                Ninja</td></tr>
+                        <tr><td>STM32CubeProgrammer</td><td>✅
+                                Installed</td><td>Used for flashing via
+                                CLI</td></tr>
+                        <tr><td>VS Code Extensions</td><td>✅
+                                Installed</td><td>STM32Cube Core, IDE, CMake,
+                                Debug, clangd</td></tr>
+                        <tr><td>Project Import</td><td>✅
+                                Working</td><td>Configured with board +
+                                GCC</td></tr>
+                        <tr><td>Build</td><td>✅ Working</td><td><code>cmake
+                                    --build build/Debug</code></td></tr>
+                        <tr><td>Flash</td><td>✅
+                                Working</td><td><code>STM32_Programmer_CLI -c
+                                    port=SWD -w ... -rst</code></td></tr>
+                        <tr><td>Git</td><td>✅
+                                Working</td><td><code>.gitignore</code> excludes
+                                build artifacts</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ===== USEFUL COMMANDS ===== -->
+            <section>
+                <h2>Useful Commands</h2>
+                <div class="command-block">
+                    <span class="prompt"># Build the project</span><br>
+                    cmake --build build/Debug<br><br>
+                    <span class="prompt"># Flash the firmware</span><br>
+                    STM32_Programmer_CLI -c port=SWD -w
+                    "path/to/build/Debug/project.elf" -v -rst<br><br>
+                    <span class="prompt"># Verify the board is
+                        detected</span><br>
+                    STM32_Programmer_CLI -c port=SWD<br><br>
+                    <span class="prompt"># Check that clangd sees the compile
+                        commands</span><br>
+                    ls build/Debug/compile_commands.json<br><br>
+                    <span class="prompt"># Restart clangd if code intelligence
+                        stalls</span><br>
+                    Ctrl+Shift+P → clangd: Restart language server
+                </div>
+            </section>
+
+            <!-- ===== KEY TAKEAWAYS ===== -->
+            <section>
+                <h2>Key Takeaways</h2>
+                <ul>
+                    <li><strong>Use CMake, not Makefile.</strong> It's the
+                        only toolchain that produces a Git-friendly
+                        project.</li>
+                    <li><strong>Only edit inside <code>USER CODE</code>
+                            blocks.</strong> Everything else gets
+                        overwritten.</li>
+                    <li><strong>Label your pins in CubeMX.</strong> The macros
+                        make your code readable and refactor-safe.</li>
+                    <li><strong>You cannot run an <code>.elf</code> on your
+                            PC.</strong> Flash it to the chip with
+                        <code>STM32_Programmer_CLI</code>.</li>
+                    <li><strong>Commit before regenerating.</strong> CubeMX
+                        changes should be their own commit, separate from
+                        hand-written code.</li>
+                    <li><strong>Ignore <code>build/</code>.</strong> Every
+                        artifact in it is regenerated on compile.</li>
+                </ul>
+            </section>
+
+            <!-- ===== WHAT'S NEXT ===== -->
+            <section>
+                <h2>What's Next?</h2>
+                <p>Once the basic workflow is stable, you can:</p>
+                <ol>
+                    <li>Set up a <code>dev</code> branch and use feature
+                        branches for new work.</li>
+                    <li>Add GitHub Actions to auto-build the firmware on every
+                        push, catching broken commits before they merge.</li>
+                    <li>Tag releases (<code>v0.1.0</code>,
+                        <code>v0.2.0</code>) when you hit stable
+                        milestones.</li>
+                    <li>Add unit tests for your application logic and run
+                        them in CI.</li>
+                </ol>
+            </section>
+
+            <!-- ===== REFERENCES ===== -->
+            <section>
+                <h2>References</h2>
+                <ul>
+                    <li><a
+                            href="https://www.st.com/en/development-tools/stm32cubeclt.html"
+                            target="_blank"
+                            rel="noopener noreferrer">STM32CubeCLT</a></li>
+                    <li><a
+                            href="https://www.st.com/en/development-tools/stm32cubemx.html"
+                            target="_blank"
+                            rel="noopener noreferrer">STM32CubeMX</a></li>
+                    <li><a
+                            href="https://marketplace.visualstudio.com/items?itemName=stmicroelectronics.stm32-vscode-extension"
+                            target="_blank" rel="noopener noreferrer">STM32 VS
+                            Code Extension</a></li>
+                    <li><a href="https://cmake.org/documentation/"
+                            target="_blank" rel="noopener noreferrer">CMake
+                            Documentation</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Links</h2>
+                <ul>
+                    <li>
+                        Project repository:
+                        <a
+                            href="https://github.com/jamesxbunker-cpu/STM32G0B1_Magnetometer-LIS3MDL"
+                            target="_blank" rel="noopener noreferrer">
+                            GitHub Repository
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </main>
+    </body>
+</html>
