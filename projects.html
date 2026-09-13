@@ -3,7 +3,7 @@
 
   <head>
     <meta charset="UTF-8" />
-    <title>Geosmin</title>
+    <title>Geosmin · Projects</title>
     <link rel="stylesheet" href="style.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -16,11 +16,26 @@
 
     <!-- ========== STATIC HEADER BAR with TAB OPTIONS ========== -->
     <site-header> </site-header>
-    <h1>Projects</h1>
-    <!-- ===== THIS DIV IS REQUIRED – the script injects projects here ===== -->
-    <div id="projectsContainer">
-      <p>loading projects…</p>
-    </div>
+
+    <!-- ===== MAIN CONTENT: Projects page styled like homepage cards ===== -->
+    <main class="container">
+      <div class="hero">
+        <h1>Projects</h1>
+        <p>Things I've built, experiments, and ongoing work.</p>
+      </div>
+
+      <!-- ===== THIS DIV IS REQUIRED – the script injects projects here ===== -->
+      <div id="projectsContainer" class="card-grid">
+        <p class="latest-loading">loading projects…</p>
+      </div>
+    </main>
+
+    <!-- ===== STATIC FOOTER (matching homepage) ===== -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <p>© 2026 Geosmin · Proudly Canadian 🍁</p>
+      </div>
+    </footer>
 
     <script>
     (function () {
@@ -29,9 +44,6 @@
       // ============================================================
       // STEP 1: CONFIGURATION
       // ============================================================
-      // Your project projects are stored in: projects/project1/, projects/project2/, etc.
-      // Each folder has an index.html with meta tags in the <head>.
-
       const project_FOLDER = 'projects';
       const MAX_PROJECTS = 50;
 
@@ -41,42 +53,30 @@
       // ============================================================
       // STEP 2: LOAD ONE PROJECT FROM ITS FOLDER
       // ============================================================
-      // This function tries to load a project from a folder.
-      // Example: loadProjectFromFolder('projects/project5')
-
       function loadProjectFromFolder(folderPath) {
         const fileUrl = folderPath + '/project_index.html';
 
-        // Go get the file
         return fetch(fileUrl)
           .then(
             function (response) {
-              // If the file doesn't exist, stop and return nothing
               if (!response.ok) {
                 return null;
               }
-              // Otherwise, get the HTML as text
               return response.text();
             }
           )
           .then(
             function (htmlText) {
-              // If we got nothing, stop
               if (!htmlText) {
                 return null;
               }
 
-              // Parse the HTML so we can search it
               const parser = new DOMParser();
               const document = parser.parseFromString(htmlText, 'text/html');
 
               function findMeta(name) {
-                // Step 1: Look for a meta tag with this name
                 const metaTag = document.querySelector('meta[name="' + name + '"]');
-
-                // Step 2: If we found the tag, get its content
                 if (metaTag) {
-                  // Get the content attribute (e.g., "My Project")
                   const content = metaTag.getAttribute('content');
                   if (content) {
                     return content;
@@ -85,12 +85,9 @@
                     return '';
                   }
                 }
-
-                // Step 3: If we didn't find the tag, return an empty string
                 return '';
               }
 
-              // Extract all the project information from meta tags
               const project = {
                 title: findMeta('title') || 'Untitled',
                 description: findMeta('description') || '',
@@ -100,18 +97,12 @@
                 folder: folderPath
               };
 
-              // Get the tags as a string (e.g., "GitHub, Web, JavaScript")
               const tagsString = project.tags;
-
-              // Split into an array at each comma
               const tagsArray = tagsString.split(',');
               const cleanedTags = [];
 
-              // Go through each tag
               for (let i = 0; i < tagsArray.length; i++) {
-                // Remove spaces from the beginning and end
                 const cleanTag = tagsArray[i].trim();
-
                 if (cleanTag.length > 0) {
                   cleanedTags.push(cleanTag);
                 }
@@ -123,7 +114,6 @@
           )
           .catch(
             function (error) {
-              // If anything fails, return nothing
               return null;
             }
           );
@@ -132,26 +122,19 @@
       // ============================================================
       // STEP 3: LOAD ALL PROJECTS
       // ============================================================
-      // This loads every project folder and collects all the projects.
-
       function loadAllProjects() {
-        // Create an array to hold all the loading tasks
         const loadingTasks = [];
 
-        // Loop through project1 to project50
         for (let i = 1; i <= MAX_PROJECTS; i++) {
           const folderPath = project_FOLDER + '/project' + i;
 
-          // Start loading this folder and remember the task
           const task = loadProjectFromFolder(folderPath)
             .then(
               function (project) {
-                // If we got a project, remember its index number
                 if (project) {
                   project.index = i;
                   return project;
                 }
-                // Otherwise, return nothing
                 return null;
               }
             );
@@ -159,11 +142,9 @@
           loadingTasks.push(task);
         }
 
-        // Wait for ALL loading tasks to finish
         return Promise.all(loadingTasks)
           .then(
             function (allProjects) {
-              // Remove any nulls (folders that didn't have a project)
               const validProjects = [];
               for (let i = 0; i < allProjects.length; i++) {
                 if (allProjects[i] !== null) {
@@ -171,7 +152,6 @@
                 }
               }
 
-              // Sort by index number (project1, project2, project3...)
               validProjects.sort(
                 function (a, b) {
                   return b.index - a.index;
@@ -184,81 +164,87 @@
       }
 
       // ============================================================
-      // STEP 4: DISPLAY PROJECTS ON THE PAGE
+      // STEP 4: DISPLAY PROJECTS AS CARDS (matching homepage style)
       // ============================================================
-
       function displayProjects(projects) {
         // Clear the container
         container.innerHTML = '';
 
         // If there are no projects, show a message
         if (projects.length === 0) {
-          container.innerHTML = '<p>No projects found. Create projects/project1/project_index.html etc.</p>';
+          container.innerHTML = '<p class="latest-loading">No projects found. Create projects/project1/project_index.html etc.</p>';
           return;
         }
 
-        // Go through each project and display it
+        // Go through each project and display it as a card
         for (let i = 0; i < projects.length; i++) {
           const project = projects[i];
 
-          // Create a div for this project
-          const projectDiv = document.createElement('div');
-          projectDiv.style.marginBottom = '1.8rem';
-          projectDiv.style.borderBottom = '1px solid #ccc';
-          projectDiv.style.paddingBottom = '0.8rem';
+          // Create the card article element
+          const card = document.createElement('article');
+          card.className = 'post-card';
 
           // --- Title (link to the full project) ---
+          const titleHeading = document.createElement('h3');
           const titleLink = document.createElement('a');
           titleLink.href = project.folder + '/project_index.html';
           titleLink.textContent = project.title;
-
-          const titleHeading = document.createElement('h3');
-          titleHeading.style.margin = '0 0 0.2rem 0';
+          titleLink.style.color = 'inherit';
+          titleLink.style.textDecoration = 'none';
           titleHeading.appendChild(titleLink);
-          projectDiv.appendChild(titleHeading);
+          card.appendChild(titleHeading);
 
-          // --- Author, Date, Tags ---
-          const metaParagraph = document.createElement('p');
-          metaParagraph.style.margin = '0.2rem 0';
+          // --- Meta section (author, date) ---
+          const metaDiv = document.createElement('div');
+          metaDiv.className = 'meta';
 
-          let metaText = '';
           if (project.author) {
-            metaText += 'Author: ' + project.author;
-          }
-          if (project.date) {
-            if (metaText) {
-              metaText += '  ·  ';
-            }
-            metaText += 'Projected: ' + project.date;
-          }
-          if (project.tags.length > 0) {
-            if (metaText) {
-              metaText += '  ·  ';
-            }
-            metaText += 'Tags: ' + project.tags.join(', ');
+            const authorSpan = document.createElement('span');
+            authorSpan.textContent = '👤 ' + project.author;
+            metaDiv.appendChild(authorSpan);
           }
 
-          metaParagraph.textContent = metaText || 'No metadata';
-          projectDiv.appendChild(metaParagraph);
+          if (project.date) {
+            const dateSpan = document.createElement('span');
+            dateSpan.textContent = '📅 ' + project.date;
+            metaDiv.appendChild(dateSpan);
+          }
+
+          if (metaDiv.children.length > 0) {
+            card.appendChild(metaDiv);
+          }
 
           // --- Description ---
           if (project.description) {
-            const descriptionParagraph = document.createElement('p');
-            descriptionParagraph.textContent = project.description;
-            descriptionParagraph.style.margin = '0.4rem 0 0 0';
-            projectDiv.appendChild(descriptionParagraph);
+            const descPara = document.createElement('p');
+            descPara.textContent = project.description;
+            card.appendChild(descPara);
           }
 
-          // Add this project to the container
-          container.appendChild(projectDiv);
+          // --- Tags ---
+          if (project.tags.length > 0) {
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'latest-tags';
+            tagsContainer.style.marginTop = '0.9rem';
+
+            for (let t = 0; t < project.tags.length; t++) {
+              const tagSpan = document.createElement('span');
+              tagSpan.className = 'tag';
+              tagSpan.textContent = project.tags[t];
+              tagsContainer.appendChild(tagSpan);
+            }
+
+            card.appendChild(tagsContainer);
+          }
+
+          // Add the card to the container
+          container.appendChild(card);
         }
       }
 
       // ============================================================
       // STEP 5: START THE PROCESS
       // ============================================================
-
-      // Load all projects, then display them
       loadAllProjects()
         .then(
           function (projects) {
@@ -267,7 +253,7 @@
         )
         .catch(
           function (error) {
-            container.innerHTML = '<p>Error: ' + error.message + '</p>';
+            container.innerHTML = '<p class="latest-loading">Error: ' + error.message + '</p>';
           }
         );
 
