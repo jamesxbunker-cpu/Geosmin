@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Project Planning · Accelerometer Position Tracking</title>
+        <meta name="title"
+            content="Project Planning · Accelerometer Position Tracking">
+        <meta name="description"
+            content="Phased project plan for tracking an object's position using an accelerometer, then integrating a gyroscope and magnetometer.">
+        <meta name="author" content="James Bunker">
+        <meta name="date" content="September 14, 2026">
+        <meta name="keywords"
+            content="accelerometer, gyroscope, magnetometer, position tracking, IMU, sensor fusion, STM32, embedded">
+        <link rel="canonical"
+            href="https://geosmin.ca/posts/post4/project_plan_position.html">
+        <link rel="stylesheet" href="../post.css">
+        <script src="../../site_header.js"></script>
+        <link rel="stylesheet" href="../../style.css">
+        <link rel="stylesheet" href="../project.css" />
+
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <style>
+        .highlight-box { background: #f0f7ff; padding: 1rem 1.5rem; border-left: 4px solid #1e90ff; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .fix-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .fix-table th { background: #2c3e50; color: white; padding: 0.5rem; text-align: left; }
+        .fix-table td, .fix-table th { border: 1px solid #ddd; padding: 0.5rem; }
+        .fix-table tr:nth-child(even) { background: #f9f9f9; }
+        .command-block { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; font-family: monospace; overflow-x: auto; }
+        .command-block .prompt { color: #6a9955; }
+        .success { color: #2ecc71; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .step { background: #eaf4fb; padding: 0.2rem 0.8rem; border-radius: 20px; display: inline-block; margin-bottom: 0.5rem; }
+        hr { margin: 2rem 0; }
+        .project-goal { background: #f0f7ff; padding: 1rem 1.5rem; border-left: 4px solid #1e90ff; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .project-goal strong { color: #1e40af; }
+        .math-block { background: #f8fafc; padding: 1rem 1.5rem; border-radius: 8px; margin: 1rem 0; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.95rem; border-left: 4px solid #64748b; }
+        .math-block strong { color: #1e293b; }
+        .math-block .var-list { margin: 0.75rem 0 0 0; padding: 0.75rem 0 0 0; border-top: 1px dashed #cbd5e1; font-size: 0.9rem; color: #475569; }
+        .math-block .var-list li { margin-bottom: 0.25rem; }
+        .phase-label { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #1e40af; background: #eef2ff; padding: 0.25rem 0.9rem; border-radius: 30px; display: inline-block; margin-bottom: 0.5rem; border: 1px solid #c7d2fe; }
+        .math-inline { font-family: 'Consolas', 'Monaco', monospace; background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: #0f172a; }
+    </style>
+    </head>
+    <body>
+        <site-header></site-header>
+        <div class="project-content">
+
+            <header>
+                <h1>Project Planning · Accelerometer Position Tracking</h1>
+                <p class="subtitle">
+                    A phased plan to track an object's position: start with a
+                    standalone accelerometer and double integration,
+                    then integrate a gyroscope and magnetometer for a full IMU
+                    sensor-fusion pipeline.
+                </p>
+                <p class="metadata">
+                    September 14, 2026 &nbsp; · &nbsp; Project Planning &nbsp; ·
+                    &nbsp;
+                    Status: <span class="badge">🚧 In Progress</span>
+                </p>
+            </header>
+            <hr />
+            <main>
+                <!-- ===== PROJECT GOAL ===== -->
+                <section>
+                    <div class="project-goal">
+                        <strong>Project Goal:</strong> Build a
+                        position-tracking system in phases. First, use a
+                        standalone
+                        accelerometer with double integration to get raw
+                        displacement. Then, add a gyroscope and magnetometer
+                        to correct orientation and gravity, enabling meaningful,
+                        real-world position tracking.
+                    </div>
+                </section>
+
+                <!-- ===== OVERVIEW ===== -->
+                <section>
+                    <h2>Overview &amp; Scope</h2>
+                    <p class="intro">
+                        Tracking an object's position using only an
+                        accelerometer is theoretically done through a
+                        mathematical
+                        process called double integration. However, in
+                        real-world applications, doing this with a standalone
+                        accelerometer is incredibly difficult and notoriously
+                        inaccurate due to sensor noise, drift, and gravity.
+                    </p>
+                    <p>
+                        This plan breaks the problem into two clear phases.
+                        Phase 1 sets up the accelerometer and implements
+                        the raw math to see firsthand why it fails on its own.
+                        Phase 2 introduces the gyroscope and magnetometer
+                        to solve the orientation and gravity problems, enabling
+                        a practical tracking solution.
+                    </p>
+                    <div class="highlight-box">
+                        <strong>Within Scope:</strong> Accelerometer setup,
+                        double integration math, noise/drift analysis,
+                        gyroscope and magnetometer integration, sensor fusion
+                        (Kalman/Madgwick), and orientation correction.
+                        <br><br>
+                        <strong>Out of scope:</strong> External absolute
+                        reference systems (GPS, Cellular, computer vision);
+                        these
+                        are noted as future extensions.
+                    </div>
+                </section>
+
+                <!-- ===== PHASE 1 ===== -->
+                <section>
+                    <h2>Phase 1 · Standalone Accelerometer &amp; Double
+                        Integration</h2>
+                    <span class="phase-label">Phase 1</span>
+                    <p>
+                        The first step is to set up a single accelerometer
+                        (e.g., an STM32LIS3DH, or a different
+                        dedicated 3-axis accelerometer) and implement the double
+                        integration math. This phase is
+                        intentionally limited to expose the fundamental
+                        problems: gravity bleed, noise, and exponential drift.
+                    </p>
+
+                    <h3>Background</h3>
+                    <p>
+                        An accelerometer measures proper acceleration, the
+                        acceleration it experiences relative to free-fall.
+                        When sitting still on a desk, it reads approximately 1g
+                        (9.8 m/s²) upward because the desk is pushing
+                        it up against gravity. To get position, you must
+                        integrate acceleration over time: once to get velocity,
+                        and again to get position. This is called <strong>double
+                            integration</strong>.
+                    </p>
+                    <p>
+                        In discrete time (which is what a microcontroller does),
+                        you sample acceleration at fixed intervals
+                        (<span class="math-inline">Δt</span>) and accumulate.
+                        The math is simple, but the errors are not.
+                    </p>
+
+                    <div class="math-block">
+                        <strong>First Integration (Acceleration →
+                            Velocity):</strong><br>
+                        <span class="math-inline">v<sub>n</sub> =
+                            v<sub>n−1</sub> + a<sub>n</sub> · Δt</span>
+                        <br><br>
+                        <strong>Second Integration (Velocity →
+                            Position):</strong><br>
+                        <span class="math-inline">p<sub>n</sub> =
+                            p<sub>n−1</sub> + v<sub>n</sub> · Δt</span>
+                        <ul class="var-list">
+                            <li><strong>v<sub>n</sub></strong> — velocity at the
+                                current sample (m/s)</li>
+                            <li><strong>v<sub>n−1</sub></strong> — velocity at
+                                the previous sample (m/s)</li>
+                            <li><strong>a<sub>n</sub></strong> — measured
+                                acceleration at the current sample (m/s²)</li>
+                            <li><strong>p<sub>n</sub></strong> — position at the
+                                current sample (m)</li>
+                            <li><strong>p<sub>n−1</sub></strong> — position at
+                                the previous sample (m)</li>
+                            <li><strong>Δt</strong> — time between samples (s),
+                                e.g., 0.01 s for 100 Hz</li>
+                        </ul>
+                    </div>
+
+                    <h3>Why It Fails (Decently Researched Topic)</h3>
+                    <table class="fix-table">
+                        <thead>
+                            <tr><th>Problem</th><th>Cause</th><th>Effect on
+                                    Position</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Gravity Bleed</strong></td>
+                                <td>Earth's gravity (9.8 m/s²) projects onto X/Y
+                                    axes when the sensor tilts.</td>
+                                <td>The sensor thinks it is permanently
+                                    accelerating, causing runaway
+                                    displacement.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Exponential Drift</strong></td>
+                                <td>Minor random noise and bias in the
+                                    accelerometer.</td>
+                                <td>Velocity error grows linearly; position
+                                    error grows as t². A 0.01g bias yields
+                                    meters of error in seconds.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Integration Error</strong></td>
+                                <td>Discrete sampling, timing jitter, and
+                                    numerical rounding.</td>
+                                <td>Accumulates over time, compounding the
+                                    drift.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="highlight-box">
+                        <strong>⚠️ Expected result:</strong> Within a few
+                        seconds, the computed position will diverge wildly
+                        from reality. This is not a bug, it is the fundamental
+                        limitation of standalone accelerometer tracking.
+                    </div>
+
+                    <h3>Phase 1 Deliverables</h3>
+                    <ul>
+                        <li>Accelerometer wired to the microcontroller (e.g.,
+                            STM32, Arduino) via I²C or SPI.</li>
+                        <li>Firmware that samples acceleration at a fixed rate
+                            (e.g., 100 Hz) and timestamps each sample.</li>
+                        <li>Implementation of the double integration loop in
+                            C.</li>
+                        <li>A data log or serial plot showing velocity and
+                            position over time, demonstrating drift.</li>
+                    </ul>
+
+                    <h3>Phase 1 Math Reference</h3>
+                    <div class="math-block">
+                        <strong>Discrete integration loop
+                            (pseudocode):</strong><br><br>
+                        dt = 0.01 // 100 Hz sample rate<br>
+                        velocity = 0<br>
+                        position = 0<br><br>
+                        loop:<br>
+                        &nbsp;&nbsp;accel = read_accelerometer()<br>
+                        &nbsp;&nbsp;velocity = velocity + (accel * dt)<br>
+                        &nbsp;&nbsp;position = position + (velocity * dt)<br>
+                        &nbsp;&nbsp;print(position)
+                        <ul class="var-list">
+                            <li><strong>dt</strong> — time step between samples
+                                (s)</li>
+                            <li><strong>accel</strong> — measured acceleration
+                                (m/s²)</li>
+                            <li><strong>velocity</strong> — accumulated velocity
+                                (m/s)</li>
+                            <li><strong>position</strong> — accumulated position
+                                (m)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <hr />
+
+                <!-- ===== PHASE 2 ===== -->
+                <section>
+                    <h2>Phase 2 · Adding Gyroscope &amp; Magnetometer (Full
+                        IMU)</h2>
+                    <span class="phase-label">Phase 2</span>
+                    <p>
+                        Phase 1 proves that a standalone accelerometer cannot
+                        track position. Phase 2 solves the orientation
+                        problem by adding a gyroscope (angular velocity) and a
+                        magnetometer (absolute heading). With these,
+                        you can determine the sensor's exact tilt and rotation,
+                        subtract gravity correctly, and isolate pure
+                        linear acceleration.
+                    </p>
+
+                    <h3>Background</h3>
+                    <p>
+                        A <strong>gyroscope</strong> measures angular velocity
+                        (how fast the sensor is rotating around each axis).
+                        By integrating angular velocity over time, you can track
+                        orientation, but it drifts slowly.
+                        A <strong>magnetometer</strong> measures the Earth's
+                        magnetic field, providing an absolute heading
+                        reference (like a compass). It is noisy but does not
+                        drift over time.
+                    </p>
+                    <p>
+                        <strong>Sensor fusion</strong> combines these
+                        complementary sensors. A Kalman filter or Madgwick
+                        filter
+                        blends the fast-but-drifting gyroscope with the
+                        slow-but-absolute magnetometer and the gravity vector
+                        from the accelerometer. The result is a stable, accurate
+                        orientation estimate.
+                    </p>
+                    <p>
+                        Once orientation is known, the gravity vector (9.8 m/s²
+                        downward in world coordinates) can be rotated
+                        into sensor coordinates and subtracted from the raw
+                        accelerometer reading. What remains is
+                        <strong>linear acceleration</strong>, the only thing
+                        you should integrate for position.
+                    </p>
+
+                    <div class="math-block">
+                        <strong>Orientation from gyroscope
+                            (integrated):</strong><br>
+                        <span class="math-inline">θ<sub>n</sub> =
+                            θ<sub>n−1</sub> + ω · Δt</span>
+                        <br><br>
+                        <strong>Gravity removal (world frame → sensor
+                            frame):</strong><br>
+                        <span class="math-inline">a<sub>linear</sub> =
+                            a<sub>measured</sub> − R<sup>T</sup> ·
+                            g<sub>world</sub></span>
+                        <ul class="var-list">
+                            <li><strong>θ<sub>n</sub></strong> — orientation
+                                angle at the current sample (rad or deg)</li>
+                            <li><strong>θ<sub>n−1</sub></strong> — orientation
+                                angle at the previous sample</li>
+                            <li><strong>ω</strong> — angular velocity from the
+                                gyroscope (rad/s)</li>
+                            <li><strong>Δt</strong> — time between samples
+                                (s)</li>
+                            <li><strong>a<sub>linear</sub></strong> — linear
+                                acceleration after removing gravity (m/s²)</li>
+                            <li><strong>a<sub>measured</sub></strong> — raw
+                                accelerometer reading (m/s²)</li>
+                            <li><strong>R</strong> — rotation matrix from sensor
+                                frame to world frame (from sensor fusion)</li>
+                            <li><strong>R<sup>T</sup></strong> — transpose of R
+                                (world frame to sensor frame)</li>
+                            <li><strong>g<sub>world</sub></strong> — gravity
+                                vector in world coordinates: [0, 0, −9.81]
+                                m/s²</li>
+                        </ul>
+                    </div>
+
+                    <h3>Sensor Fusion Algorithms</h3>
+                    <table class="fix-table">
+                        <thead>
+                            <tr><th>Algorithm</th><th>Type</th><th>Notes</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Madgwick Filter</strong></td>
+                                <td>Complementary / gradient descent</td>
+                                <td>Lightweight, good for microcontrollers,
+                                    open-source implementations available.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Mahony Filter</strong></td>
+                                <td>Complementary (PI controller)</td>
+                                <td>Simpler than Kalman, well-suited for
+                                    embedded systems.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Kalman Filter</strong></td>
+                                <td>Optimal estimator</td>
+                                <td>More computationally intensive; can be
+                                    extended to estimate velocity and
+                                    position.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="highlight-box">
+                        <strong>✅ The key insight:</strong> You cannot get
+                        position from an accelerometer alone. You must
+                        first solve orientation (with gyro + mag + fusion), then
+                        remove gravity, then integrate the remaining
+                        linear acceleration. Even then, drift is reduced but not
+                        eliminated, external references (GPS, Cellular)
+                        are still needed for long-term accuracy.
+                    </div>
+
+                    <h3>Phase 2 Deliverables</h3>
+                    <ul>
+                        <li>IMU with 3-axis accelerometer, gyroscope, and
+                            magnetometer (e.g., MPU9250, ICM-20948,
+                            LSM9DS1).</li>
+                        <li>Sensor fusion implementation (Madgwick or Mahony)
+                            running on the microcontroller.</li>
+                        <li>Gravity-compensated linear acceleration output.</li>
+                        <li>Updated position tracking with significantly reduced
+                            drift compared to Phase 1.</li>
+                        <li>Comparison plots: raw vs. fused orientation, and
+                            position drift before/after gravity removal.</li>
+                    </ul>
+
+                    <h3>Phase 2 Math Reference</h3>
+                    <div class="math-block">
+                        <strong>Madgwick filter (simplified
+                            update):</strong><br>
+                        <span class="math-inline">q̇ = ½ · q ⊗ (0,
+                            ω<sub>gyro</sub>) − β · ∇f(q, a<sub>accel</sub>,
+                            m<sub>mag</sub>)</span>
+                        <ul class="var-list">
+                            <li><strong>q̇</strong> — rate of change of the
+                                quaternion orientation</li>
+                            <li><strong>q</strong> — quaternion representing
+                                current orientation</li>
+                            <li><strong>⊗</strong> — quaternion
+                                multiplication</li>
+                            <li><strong>ω<sub>gyro</sub></strong> — angular
+                                velocity from gyroscope (rad/s)</li>
+                            <li><strong>β</strong> — tuning parameter (trade-off
+                                between gyro and accel/mag trust)</li>
+                            <li><strong>∇f</strong> — gradient of the objective
+                                function measuring accel/mag error</li>
+                            <li><strong>a<sub>accel</sub></strong> —
+                                accelerometer reading</li>
+                            <li><strong>m<sub>mag</sub></strong> — magnetometer
+                                reading</li>
+                        </ul>
+                        <br>
+                        <strong>Position integration after gravity
+                            removal:</strong><br>
+                        <span class="math-inline">v<sub>n</sub> =
+                            v<sub>n−1</sub> + a<sub>linear</sub> · Δt</span><br>
+                        <span class="math-inline">p<sub>n</sub> =
+                            p<sub>n−1</sub> + v<sub>n</sub> · Δt</span>
+                        <ul class="var-list">
+                            <li><strong>v<sub>n</sub></strong> — velocity at
+                                current sample (m/s)</li>
+                            <li><strong>v<sub>n−1</sub></strong> — velocity at
+                                previous sample (m/s)</li>
+                            <li><strong>a<sub>linear</sub></strong> —
+                                gravity-compensated linear acceleration
+                                (m/s²)</li>
+                            <li><strong>p<sub>n</sub></strong> — position at
+                                current sample (m)</li>
+                            <li><strong>p<sub>n−1</sub></strong> — position at
+                                previous sample (m)</li>
+                            <li><strong>Δt</strong> — time between samples
+                                (s)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <hr />
+
+                <!-- ===== PHASE 3 (FUTURE) ===== -->
+                <section>
+                    <h2>Phase 3 (Future) · External Reference Anchors</h2>
+                    <span class="phase-label">Optional Extension</span>
+                    <p>
+                        Even with full sensor fusion, inertial position tracking
+                        drifts over time. Practical systems use
+                        periodic absolute references to reset accumulated error.
+                        This phase is not required for the core
+                        project but is documented for completeness.
+                    </p>
+                    <ul>
+                        <li><strong>GPS:</strong> Provides absolute outdoor
+                            position at ~1–10 Hz. Ideal for long-range
+                            tracking.</li>
+                        <li><strong>Computer Vision / Cameras:</strong> Tracks
+                            markers or infrared LEDs for indoor precision (as in
+                            VR headsets).</li>
+                        <li><strong>Zero Velocity Updates (ZUPT):</strong> When
+                            the sensor detects zero motion (e.g., a foot hitting
+                            the ground), velocity is forcibly reset to zero,
+                            eliminating accumulated drift.</li>
+                    </ul>
+                    <div class="math-block">
+                        <strong>ZUPT correction (simple):</strong><br>
+                        if |a<sub>linear</sub>| &lt; threshold and |ω| &lt;
+                        threshold:<br>
+                        &nbsp;&nbsp;v = 0 // reset velocity<br>
+                        &nbsp;&nbsp;drift = 0 // optionally reset drift estimate
+                        <ul class="var-list">
+                            <li><strong>a<sub>linear</sub></strong> — linear
+                                acceleration (m/s²)</li>
+                            <li><strong>ω</strong> — angular velocity
+                                (rad/s)</li>
+                            <li><strong>v</strong> — velocity (m/s)</li>
+                            <li><strong>threshold</strong> — small values below
+                                which motion is considered stopped</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <hr />
+
+                <!-- ===== USEFUL COMMANDS ===== -->
+                <section>
+                    <h2>References</h2>
+                    <ul>
+                        <li><a
+                                href="https://kolegite.com/EE_library/application_notes/sensors/AN3397_integrate_accelerometer_data_into_position.pdf"
+                                target="_blank"
+                                rel="noopener noreferrer">AN3397: Integrating
+                                accelerometer data into position (ST App
+                                Note)</a>: <br>Why standalone accelerometer
+                            tracking fails: gravity bleed, noise, and
+                            exponential drift.</li>
+                        <li><a href="https://github.com/xioTechnologies/Fusion"
+                                target="_blank"
+                                rel="noopener noreferrer">Madgwick Filter
+                                (Fusion library)</a>: <br>Lightweight
+                            complementary
+                            filter for embedded sensor fusion.</li>
+                        <li><a href="https://github.com/kriswiner/MPU9250"
+                                target="_blank"
+                                rel="noopener noreferrer">MPU9250 sensor fusion
+                                example</a>: <br>Practical Mahony filter
+                            implementation on a 9-DOF IMU.</li>
+                        <li><a href="https://github.com/rfetick/Kalman"
+                                target="_blank" rel="noopener noreferrer">Kalman
+                                Filter library (rfetick)</a>:
+                            <br>General-purpose
+                            Kalman filter for orientation and position
+                            estimation.</li>
+                        <li><a
+                                href="https://www.youtube.com/watch?v=KMhbV1p3MWk"
+                                target="_blank" rel="noopener noreferrer">How to
+                                remove gravity from accelerometer data</a>: <br>
+                            Visual explanation of gravity compensation using
+                            orientation.</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </body>
+</html>
