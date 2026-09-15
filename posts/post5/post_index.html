@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Understanding Madgwick, Mahony, and Kalman Filters | James
+            Bunker</title>
+        <meta name="title"
+            content="Madgwick, Mahony, and Kalman Filters" />
+        <meta name="description"
+            content="A beginner-friendly explanation of the Madgwick, Mahony, and Kalman filters for 3D orientation estimation, and how they compare.">
+        <meta name="author" content="James Bunker">
+        <meta name="date" content="September 14, 2026">
+        <meta name="keywords"
+            content="Madgwick, Mahony, Kalman, filter, orientation, sensor, IMU" />
+        <link rel="stylesheet" href="../post.css">
+        <link rel="stylesheet" href="../../style.css" />
+        <script src="../../site_header.js"></script>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <style>
+        /* Table styles to match the fix-table class from the original post */
+        .fix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        .fix-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        .fix-table td, .fix-table th {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+        }
+        .fix-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .highlight-box {
+            background: #f0f7ff;
+            padding: 1rem 1.5rem;
+            border-left: 4px solid #1e90ff;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .script-container {
+            background: #0d1117;
+            color: #e6edf3;
+            border-radius: 16px;
+            padding: 1.5rem 1.8rem;
+            margin: 1.5rem 0 2rem 0;
+            overflow-x: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+            tab-size: 2;
+        }
+        </style>
+    </head>
+    <body>
+        <site-header></site-header>
+        <header class="page-header">
+            <h1>Madgwick, Mahony, and Kalman Filters</h1>
+            <p class="subtitle">Three ways to estimate 3D orientation from noisy
+                sensors, and when to use each one.</p>
+            <p class="metadata">September 14, 2026 &nbsp;|&nbsp; Embedded,
+                Sensors, Algorithms</p>
+        </header>
+        <hr />
+
+        <main>
+            <!-- INTRODUCTION -->
+            <section>
+                <h2>Introduction</h2>
+                <p class="intro">
+                    If you've ever worked with an IMU (Inertial Measurement
+                    Unit), you've faced the same problem: no single sensor gives
+                    you a reliable orientation estimate on its own. Gyroscopes
+                    drift. Accelerometers are noisy. Magnetometers get distorted
+                    by nearby metal. The solution is to combine them:
+                    that's exactly what the Madgwick, Mahony, and Kalman filters
+                    do.
+                </p>
+                <p>
+                    In this post, I'll explain the core problem these filters
+                    solve, walk through each one's approach, and compare them so
+                    you can pick the right tool for your project. I will be
+                    using one of these for my future IMU-based projects, and I
+                    hope this post helps you choose the right one for yours.
+                </p>
+            </section>
+
+            <!-- THE CORE PROBLEM -->
+            <section>
+                <h2>The Core Problem: Gyroscope Drift</h2>
+                <p>
+                    A gyroscope measures angular velocity. If you integrate that
+                    over time, you get orientation. But gyroscopes have a
+                    constant bias error, and integration accumulates that error.
+                    After a minute, your estimate might be 10 degrees off. This
+                    is called <strong>drift</strong>.
+                </p>
+                <p>
+                    <strong>What "integrating" actually means here:</strong> If
+                    you know you're rotating at 90 degrees per second, then
+                    after one second you've rotated 90 degrees. After two
+                    seconds, 180 degrees. That's integration: adding up
+                    angular velocity over time to get total angle. The problem
+                    is that if the gyro says "90 degrees per second" when it's
+                    really "89.5 degrees per second," that tiny 0.5 degree
+                    error gets added every single second. After a minute, you
+                    think you've rotated 5400 degrees when you've actually
+                    rotated 5370. That 30-degree gap is drift.
+                </p>
+                <p>
+                    An accelerometer measures gravity direction. It doesn't
+                    drift. But it's noisy and useless when the device is
+                    accelerating (like on a drone with vibrating
+                    propellers).</p>
+                <p> A magnetometer measures Earth's magnetic field and
+                    provides
+                    absolute yaw, but it's distorted by nearby metal or
+                    electronics.
+                </p>
+                <p>
+                    Every filter here combines these sensors. The question is
+                    <em>how</em>.
+                </p>
+            </section>
+
+            <!-- MADGWICK -->
+            <section>
+                <h2>Madgwick Filter: Gradient Descent</h2>
+                <p>
+                    Madgwick uses a mathematical technique called
+                    <strong>gradient descent</strong> to correct the gyroscope's
+                    drift. It computes the error between
+                    "where gravity should be" (based on the current orientation
+                    estimate) and "where gravity actually is" (from the
+                    accelerometer), then takes a small step in the direction
+                    that reduces that error.
+                </p>
+                <p>
+                    <strong>What gradient descent means in plain
+                        English:</strong>
+                    Imagine you're standing on a foggy hill and want to reach
+                    the bottom. You can't see the whole landscape, but you can
+                    feel which way the ground slopes under your feet. So you
+                    take a small step downhill, check the slope again, and
+                    repeat. Eventually you reach the bottom. Gradient descent
+                    does the same thing with numbers: it looks at the current
+                    error, figures out which direction would reduce it, and
+                    takes a small step that way. In Madgwick's case, the "hill"
+                    is the mismatch between predicted gravity and measured
+                    gravity, and the "bottom" is zero error.
+                </p>
+                <p>
+                    The key equation looks like this:
+                </p>
+                <div class="script-container">
+                    q̇ = ½ · q ⊗ (0, ω) − β · ∇f/‖∇f‖
+                </div>
+                <p>
+                    <strong>Breaking down that equation piece by piece:</strong>
+                </p>
+                <ul>
+                    <li><code>q̇</code> (read "q-dot") — the rate of change of
+                        orientation. It's what we want to compute.</li>
+                    <li><code>½ · q ⊗ (0, ω)</code> — the gyroscope term.
+                        <code>q</code> is the current orientation (stored as a
+                        quaternion, which is just a compact way to represent 3D
+                        rotation with four numbers instead of nine). The
+                        <code>⊗</code> symbol means "quaternion
+                        multiplication." <code>(0, ω)</code> packs the three
+                        angular velocity readings into a quaternion-like
+                        structure. This whole term says: "if only the gyroscope
+                        existed, here's how orientation would change."</li>
+                    <li><code>− β · ∇f/‖∇f‖</code> — the correction term.
+                        <code>∇f</code> (read "grad f") is the gradient: a
+                        vector pointing in the direction of steepest error
+                        increase. Dividing by <code>‖∇f‖</code> (its magnitude)
+                        normalizes it to a unit vector, so only the direction
+                        matters, not the size. The minus sign means we go the
+                        <em>opposite</em> way, toward lower error.
+                        <code>β</code> is a tuning knob: how big a step do we
+                        take each time?</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>The big advantage:</strong> Madgwick is extremely
+                    lightweight. The correction step is just
+                    "a handful of multiplies" because the gradient has an
+                    analytic form, no matrix inversions, no heavy math. It runs
+                    at kilohertz speeds on microcontrollers. The original
+                    open-source implementation is freely available, and STM32
+                    ports exist.
+                </div>
+                <p>
+                    <strong>The downside:</strong> It converges unpredictably in
+                    some cases, and its yaw estimate degrades badly in
+                    magnetically disturbed environments because it relies on the
+                    magnetometer for heading. This can be problematic depending
+                    on your application.
+                </p>
+            </section>
+
+            <!-- MAHONY -->
+            <section>
+                <h2>Mahony Filter: PI Controller</h2>
+                <p>
+                    Mahony takes a different approach. Instead of gradient
+                    descent, it uses a <strong>proportional-integral (PI)
+                        controller</strong> to drive the estimated gravity
+                    direction toward the measured direction.
+                </p>
+                <p>
+                    <strong>What a PI controller is:</strong> Think of cruise
+                    control in a car. You set a target speed (say 100 km/h).
+                    The car measures its actual speed and compares it to the
+                    target. The difference is the "error." A PI controller
+                    reacts to that error in two ways:
+                </p>
+                <ul>
+                    <li><strong>P (proportional):</strong> "The faster I'm
+                        going, the more I ease off the gas." Big error means big
+                        correction. Small error means small correction. This
+                        handles the immediate response.</li>
+                    <li><strong>I (integral):</strong> "If I've been
+                        consistently 5 km/h too slow for a while, I should
+                        gradually press harder on the gas." This term
+                        accumulates past errors and fixes long-term bias. It's
+                        what eliminates steady-state error.</li>
+                </ul>
+                <p>
+                    Here's the intuition: the cross product between estimated
+                    gravity and measured gravity gives you a rotation axis and
+                    magnitude. The PI controller uses that error to adjust the
+                    gyroscope readings before integration.
+                </p>
+                <p>
+                    <strong>What a cross product is:</strong> If you have two
+                    arrows in 3D space, the cross product gives you a third
+                    arrow that's perpendicular to both. Its length depends on
+                    how far apart the two original arrows are. In Mahony's case,
+                    one arrow is "which way I think gravity points" and the
+                    other is "which way the accelerometer says gravity points."
+                    If they're perfectly aligned, the cross product is zero
+                    (no correction needed). If they're misaligned, the cross
+                    product tells you which axis to rotate around to bring them
+                    back together, and how big that rotation should be.
+                </p>
+                <p>
+                    The <strong>P</strong> term reacts to current error (fast
+                    correction), and the <strong>I</strong> term accumulates
+                    error over time to eliminate steady-state bias.
+                </p>
+                <div class="highlight-box">
+                    <strong>The advantage:</strong> Mahony is conceptually
+                    simpler than Madgwick, and the PI gains (Kp and Ki) have
+                    clear physical meanings: Kp controls responsiveness, Ki
+                    controls how aggressively it corrects long-term bias. Memory
+                    and computation are the lowest of the three options.
+                </div>
+                <p>
+                    <strong>The downside:</strong> Like Madgwick, it also
+                    struggles with magnetic disturbances. One study found that
+                    both Madgwick and Mahony (along with a standard Kalman
+                    filter) produced "markedly different results" in
+                    magnetically disturbed locations compared to clean ones,
+                    indicating degraded performance.
+                </p>
+            </section>
+
+            <!-- KALMAN -->
+            <section>
+                <h2>Kalman Filter: Optimal Estimator</h2>
+                <p>
+                    The Kalman filter is fundamentally different from the other
+                    two. It doesn't just blend sensor readings; it maintains a
+                    <strong>statistical model</strong> of the system, including:
+                </p>
+                <ul>
+                    <li>A <strong>state vector</strong> (orientation, possibly
+                        velocity and position)</li>
+                    <li>A <strong>covariance matrix</strong> representing
+                        uncertainty in that state</li>
+                    <li><strong>Process noise</strong> (how unpredictable the
+                        system is)</li>
+                    <li><strong>Measurement noise</strong> (how noisy each
+                        sensor is)</li>
+                </ul>
+                <p>
+                    <strong>What a state vector is:</strong> It's just a list
+                    of numbers describing everything you care about right now.
+                    For orientation, it might be <code>[roll, pitch, yaw,
+                        gyro_bias_x, gyro_bias_y, gyro_bias_z]</code>. That's
+                    it:
+                    a compact snapshot of the system's current condition.
+                </p>
+                <p>
+                    <strong>What a covariance matrix is:</strong> This is the
+                    part that trips most people up, so let's go slowly. A
+                    covariance matrix is a grid of numbers that answers the
+                    question: "How uncertain am I about each part of the state,
+                    and how do those uncertainties relate to each other?"
+                </p>
+                <p>
+                    Imagine a 2D state with just roll and pitch. The covariance
+                    matrix would be a 2×2 grid:
+                </p>
+                <div class="script-container">
+                    [ σ²_roll cov(roll, pitch) ]
+                    [ cov(pitch, roll) σ²_pitch ]
+                </div>
+                <ul>
+                    <li><code>σ²_roll</code> — how uncertain you are about
+                        roll alone. Big number means "I'm not very sure."</li>
+                    <li><code>σ²_pitch</code> — same, for pitch.</li>
+                    <li><code>cov(roll, pitch)</code> — whether errors in roll
+                        and pitch tend to happen together. If this is positive,
+                        when roll is overestimated, pitch tends to be
+                        overestimated too. If zero, they're independent.</li>
+                </ul>
+                <p>
+                    The filter keeps this matrix updated as it runs. When it
+                    makes a prediction, uncertainties grow (because you're
+                    extrapolating into the future). When it gets a measurement,
+                    uncertainties shrink (because new information helps).
+                </p>
+                <p>
+                    At each timestep, the Kalman filter:
+                </p>
+                <ol>
+                    <li><strong>Predicts</strong> the next state using the
+                        system model. This is like saying "based on how I was
+                        moving, here's where I expect to be now." Uncertainty
+                        grows because you're guessing.</li>
+                    <li><strong>Compares</strong> that prediction to the actual
+                        measurement. The difference is called the "innovation,"
+                        and it tells you how wrong your prediction was.</li>
+                    <li><strong>Weights</strong> the correction based on how
+                        uncertain each source is. This is the "Kalman gain": if
+                        the prediction is uncertain but the measurement is
+                        clean, trust the measurement more. If the prediction is
+                        confident but the measurement is noisy, trust the
+                        prediction more.</li>
+                </ol>
+                <p>
+                    If your orientation estimate is already very precise but the
+                    accelerometer reading is noisy, the filter barely adjusts.
+                    If the orientation estimate is uncertain and the
+                    accelerometer is clean, it adjusts a lot.
+                </p>
+                <div class="highlight-box">
+                    <strong>The advantage:</strong> The Kalman filter is
+                    mathematically <strong>optimal</strong>, it produces the
+                    minimum-variance estimate for linear systems with Gaussian
+                    noise. It can also estimate things the other filters don't,
+                    like velocity and position, by including them in the state
+                    vector.
+                </div>
+                <p>
+                    <strong>The downside:</strong> It's computationally
+                    expensive. The standard Kalman filter requires matrix
+                    operations (multiplications, inversions) every update cycle.
+                </p>
+                <p>
+                    <strong>Why matrix operations are expensive:</strong> A
+                    matrix is a grid of numbers, and multiplying two matrices
+                    isn't as simple as multiplying each pair of numbers. For
+                    every entry in the result, you multiply a whole row by a
+                    whole column and add up the products. A 6×6 matrix
+                    multiplication (typical for a 6-state Kalman filter)
+                    involves 216 individual multiplications, and that's before
+                    you get to the inversion step. Matrix inversion is even
+                    worse: it's like solving a system of equations where every
+                    equation depends on every other one. On a microcontroller
+                    running at 72 MHz with no floating-point unit, this can take
+                    milliseconds per update.
+                </p>
+                <p>
+                    For nonlinear systems like orientation (which involves
+                    trigonometry and quaternion multiplication), you need the
+                    <strong>Extended Kalman Filter (EKF)</strong>, which adds
+                    Jacobian matrix computations on top of that.
+                </p>
+                <p>
+                    <strong>What a Jacobian is:</strong> In plain terms, it's
+                    a matrix of derivatives. Derivatives tell you how much one
+                    thing changes when another thing changes. If you have a
+                    function that takes 6 inputs and produces 6 outputs, the
+                    Jacobian is a 6×6 grid where each entry answers: "if I nudge
+                    input #3 a tiny bit, how much does output #5 move?" The EKF
+                    needs this grid because its system model is nonlinear, so
+                    the relationship between inputs and outputs isn't a simple
+                    constant scaling. Computing the Jacobian means doing
+                    calculus analytically (or approximating it numerically) and
+                    then multiplying those matrices every single update. On a
+                    microcontroller, this can be a significant load.
+                </p>
+            </section>
+
+            <!-- QUICK COMPARISON -->
+            <section>
+                <h2>Quick Comparison</h2>
+                <table class="fix-table">
+                    <thead>
+                        <tr>
+                            <th>Filter</th>
+                            <th>Method</th>
+                            <th>Computation</th>
+                            <th>Best For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Madgwick</strong></td>
+                            <td>Gradient descent</td>
+                            <td>Low</td>
+                            <td>Fast embedded systems, open-source projects</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mahony</strong></td>
+                            <td>PI controller</td>
+                            <td>Lowest</td>
+                            <td>Memory-constrained devices</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Kalman</strong></td>
+                            <td>Statistical estimator</td>
+                            <td>High</td>
+                            <td>Applications needing velocity/position too</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>
+                    The trade-off is clear: Madgwick and Mahony sacrifice
+                    optimality for speed, while Kalman gives you the best
+                    estimate at the cost of CPU cycles.
+                </p>
+            </section>
+
+            <!-- MAGNETIC DISTURBANCES -->
+            <section>
+                <h2>A Practical Note on Magnetic Disturbances</h2>
+                <p>
+                    All three filters use the magnetometer for yaw estimation.
+                    In real environments magnetic fields get distorted: indoors,
+                    near motors, on drones. One recent study compared
+                    these filters and found they all degraded significantly in
+                    magnetically disturbed areas, while a newer algorithm
+                    (GMVDK) maintained consistent performance. If your
+                    application operates near electronics or metal, this is
+                    worth considering.
+                </p>
+            </section>
+
+            <!-- SUMMARY -->
+            <section>
+                <h2>Summary</h2>
+                <p>
+                    Choosing between Madgwick, Mahony, and Kalman comes down to
+                    your constraints:
+                </p>
+                <ul>
+                    <li><strong>Madgwick</strong>: best balance of accuracy and
+                        speed for most embedded projects. Open-source,
+                        well-documented, and runs comfortably on an STM32.</li>
+                    <li><strong>Mahony</strong>: the lightest option. Good when
+                        you're tight on memory or CPU, and the PI gains give you
+                        intuitive control over behavior.</li>
+                    <li><strong>Kalman</strong>: the most powerful, but the
+                        heaviest. Use it when you need velocity or position
+                        estimates alongside orientation, and you have the CPU
+                        headroom to afford it.</li>
+                </ul>
+                <p>
+                    For a typical STM32 project doing basic orientation sensing,
+                    Madgwick or Mahony will serve you well. Reach for the Kalman
+                    filter when you need more than just orientation, or when
+                    you're willing to trade computation for optimality.
+                </p>
+            </section>
+
+            <!-- REFERENCES -->
+            <section>
+                <h2>References</h2>
+                <ul>
+                    <li><a
+                            href="https://x-io.co.uk/open-source-imu-and-ahrs-algorithms/"
+                            target="_blank" rel="noopener noreferrer">Madgwick &
+                            Mahony Open-Source Implementations (x-io)</a></li>
+                    <li><a href="https://www.mdpi.com/1424-8220/21/9/3143"
+                            target="_blank"
+                            rel="noopener noreferrer">Comparative Study of
+                            Orientation Filters (MDPI Sensors)</a></li>
+                </ul>
+            </section>
+        </main>
+    </body>
+</html>
