@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Windows Pipes: A Practical Guide from My ComPort Project |
+            James Bunker</title>
+        <meta name="title" content="Windows Pipes: A Practical Guide" />
+        <meta name="description"
+            content="A beginner-friendly explanation of Windows pipes: anonymous and named, blocking vs overlapped I/O, and what I learned building my ComPort serial tool.">
+        <meta name="author" content="James Bunker">
+        <meta name="date" content="March 18, 2026">
+        <meta name="keywords"
+            content="Windows, pipes, anonymous pipe, named pipe, COM port, serial, overlapped I/O, IPC, Win32" />
+        <link rel="stylesheet" href="../post.css">
+        <link rel="stylesheet" href="../../style.css" />
+        <script src="../../site_header.js"></script>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <style>
+        /* Table styles to match the fix-table class from the original post */
+        .fix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        .fix-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        .fix-table td, .fix-table th {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+        }
+        .fix-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .highlight-box {
+            background: #f0f7ff;
+            padding: 1rem 1.5rem;
+            border-left: 4px solid #1e90ff;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .script-container {
+            background: #0d1117;
+            color: #e6edf3;
+            border-radius: 16px;
+            padding: 1.5rem 1.8rem;
+            margin: 1.5rem 0 2rem 0;
+            overflow-x: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+            tab-size: 2;
+        }
+        .script-container code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+        code {
+            background: #eef1f5;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        </style>
+    </head>
+    <body>
+        <site-header></site-header>
+        <header class="page-header">
+            <h1>Windows Pipes: A Practical Guide</h1>
+            <p class="subtitle">Anonymous and named pipes, blocking vs overlapped
+                I/O, and what I learned building my ComPort serial tool.</p>
+            <p class="metadata">March 18, 2026 &nbsp;|&nbsp; Windows, Systems
+                Programming, IPC</p>
+        </header>
+        <hr />
+
+        <main>
+            <!-- INTRODUCTION -->
+            <section>
+                <h2>Introduction</h2>
+                <p class="intro">
+                    While building my <strong>ComPort</strong> project, a
+                    serial terminal and data logger for Windows, I hit a
+                    problem that every systems programmer eventually faces:
+                    I had one thread reading from the serial port, another
+                    thread writing to it, and a third thread updating the UI.
+                    How do I get data from the reader thread to the UI thread
+                    without locks, races, or a mess of shared buffers?
+                </p>
+                <p>
+                    The answer, as it turns out, was <strong>Windows
+                        pipes</strong>. In this post, I'll explain what pipes
+                    are, the difference between anonymous and named pipes, how
+                    blocking and overlapped I/O change everything, and how I
+                    used them in ComPort to move serial data around safely.
+                </p>
+            </section>
+
+            <!-- WHAT IS A PIPE -->
+            <section>
+                <h2>What Is a Pipe?</h2>
+                <p>
+                    A <strong>pipe</strong> is a chunk of kernel memory that
+                    behaves like a one-way (or two-way) stream of bytes. One
+                    end writes, the other end reads. The kernel handles the
+                    buffering, so the writer and reader don't have to know
+                    anything about each other. They just need a handle to
+                    their end of the pipe.
+                </p>
+                <p>
+                    <strong>Why "pipe"?</strong> The mental model is a literal
+                    pipe: bytes go in one end and come out the other. You
+                    don't care how they're stored in between; the pipe just
+                    carries them. If you've ever used <code>dir | findstr
+                        ".txt"</code> in <code>cmd.exe</code>, you've already
+                    used a pipe. The output of <code>dir</code> flows into
+                    the input of <code>findstr</code>.
+                </p>
+                <p>
+                    Windows gives you two flavors of pipe:
+                </p>
+                <ul>
+                    <li><strong>Anonymous pipes</strong>: unnamed, one-way,
+                        typically used between a parent and child process.</li>
+                    <li><strong>Named pipes</strong>: have a name in the
+                        filesystem namespace, can be one-way or duplex, and
+                        can be used between unrelated processes (even across
+                        a network).</li>
+                </ul>
+                <p>
+                    Both are created with the same underlying mechanism, but
+                    they serve very different purposes.
+                </p>
+            </section>
+
+            <!-- ANONYMOUS PIPES -->
+            <section>
+                <h2>Anonymous Pipes: Simple and Local</h2>
+                <p>
+                    An anonymous pipe is created with a single call:
+                </p>
+                <div class="script-container">
+                    <code>
+BOOL CreatePipe(
+    PHANDLE               hReadPipe,
+    PHANDLE               hWritePipe,
+    LPSECURITY_ATTRIBUTES lpPipeAttributes,
+    DWORD                 nSize
+);
+</code>
+                </div>
+                <p>
+                    <strong>Breaking down the parameters:</strong>
+                </p>
+                <ul>
+                    <li><code>hReadPipe</code> / <code>hWritePipe</code>:
+                        pointers to two <code>HANDLE</code> variables. The
+                        function fills them in with the read and write ends
+                        of the new pipe.</li>
+                    <li><code>lpPipeAttributes</code>: security attributes.
+                        The important field here is
+                        <code>bInheritHandle</code>. If you set it to
+                        <code>TRUE</code>, child processes can inherit the
+                        handle. This is how you pass a pipe to a child process
+                        you're about to spawn.</li>
+                    <li><code>nSize</code>: a hint for the buffer size. Pass
+                        <code>0</code> to let the system pick a default (usually
+                        4 KB). The actual buffer may be larger.</li>
+                </ul>
+                <p>
+                    Here's the catch: <strong>anonymous pipes are one-way
+                        only</strong>. If you need bidirectional communication
+                    between two processes, you need <em>two</em> anonymous
+                    pipes, one for each direction. And they can only be used
+                    between processes that share a parent-child relationship
+                    (or at least have a way to inherit handles). They are not
+                    named, so unrelated processes can't open them.
+                </p>
+                <div class="highlight-box">
+                    <strong>When to use anonymous pipes:</strong> When you're
+                    spawning a child process and want to capture its stdout or
+                    feed its stdin. Think <code>CreateProcess</code> with
+                    redirected output. That's anonymous pipes at work.
+                </div>
+            </section>
+
+            <!-- NAMED PIPES -->
+            <section>
+                <h2>Named Pipes: The Full-Featured Option</h2>
+                <p>
+                    A named pipe is created with
+                    <code>CreateNamedPipe</code> and lives at a path like
+                    <code>\\.\pipe\MyPipeName</code>. Because it has a name,
+                    any process that knows the name can open it. No
+                    parent-child relationship required.
+                </p>
+                <div class="script-container">
+                    <code>
+HANDLE CreateNamedPipe(
+    LPCTSTR               lpName,
+    DWORD                 dwOpenMode,
+    DWORD                 dwPipeMode,
+    DWORD                 nMaxInstances,
+    DWORD                 nOutBufferSize,
+    DWORD                 nInBufferSize,
+    DWORD                 nDefaultTimeOut,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes
+);
+</code>
+                </div>
+                <p>
+                    The parameters that matter most:
+                </p>
+                <ul>
+                    <li><code>lpName</code>: the pipe name, like
+                        <code>\\.\pipe\comport_logger</code>.</li>
+                    <li><code>dwOpenMode</code>: flags like
+                        <code>PIPE_ACCESS_DUPLEX</code> (two-way),
+                        <code>PIPE_ACCESS_INBOUND</code>,
+                        <code>PIPE_ACCESS_OUTBOUND</code>, and
+                        <code>FILE_FLAG_OVERLAPPED</code> for asynchronous
+                        I/O.</li>
+                    <li><code>dwPipeMode</code>: <code>PIPE_TYPE_BYTE</code>
+                        vs <code>PIPE_TYPE_MESSAGE</code>, and
+                        <code>PIPE_READMODE_BYTE</code> vs
+                        <code>PIPE_READMODE_MESSAGE</code>.</li>
+                    <li><code>nMaxInstances</code>: how many simultaneous
+                        connections the pipe allows. Use
+                        <code>PIPE_UNLIMITED_INSTANCES</code> for no limit.</li>
+                    <li><code>nOutBufferSize</code> /
+                        <code>nInBufferSize</code>: buffer sizes, again a
+                        hint.</li>
+                </ul>
+                <p>
+                    <strong>Byte vs message mode</strong> is a subtle but
+                    important choice. In <em>byte mode</em>, the pipe is just
+                    a stream of bytes. Reads can return partial data. In
+                    <em>message mode</em>, each write is a discrete message,
+                    and a read returns exactly one message (or fails if the
+                    buffer is too small). For a serial port, byte mode is the
+                    natural fit because serial data is a stream.
+                </p>
+                <p>
+                    The lifecycle of a named pipe server looks like this:
+                </p>
+                <ol>
+                    <li><code>CreateNamedPipe</code>: create the first
+                        instance.</li>
+                    <li><code>ConnectNamedPipe</code>: wait for a client to
+                        connect.</li>
+                    <li><code>ReadFile</code> / <code>WriteFile</code>:
+                        exchange data.</li>
+                    <li><code>DisconnectNamedPipe</code>: drop the client.</li>
+                    <li><code>CloseHandle</code>: clean up.</li>
+                </ol>
+                <p>
+                    A named pipe server typically runs a loop: create an
+                    instance, wait for a connection, service it, disconnect,
+                    and repeat. This is how services like SQL Server accept
+                    local connections.
+                </p>
+            </section>
+
+            <!-- BLOCKING VS OVERLAPPED -->
+            <section>
+                <h2>Blocking vs Overlapped I/O</h2>
+                <p>
+                    This is where a lot of people get stuck, and it's the
+                    single most important concept for using pipes (or serial
+                    ports, or sockets) effectively on Windows.
+                </p>
+                <p>
+                    <strong>Blocking I/O</strong> is the default. When you
+                    call <code>ReadFile</code> on a blocking handle, the
+                    function <em>does not return</em> until data is available.
+                    Your thread sits there, doing nothing, waiting. This is
+                    fine for a simple console app, but terrible for a UI
+                    thread or a server handling multiple clients.
+                </p>
+                <p>
+                    <strong>Overlapped I/O</strong> (also called asynchronous
+                    I/O) changes that. You open the handle with
+                    <code>FILE_FLAG_OVERLAPPED</code>, and then
+                    <code>ReadFile</code> returns immediately. The read
+                    happens in the background. You find out it's done through
+                    one of several mechanisms:
+                </p>
+                <ul>
+                    <li>The <code>OVERLAPPED</code> structure's event. You
+                        wait on it with <code>WaitForSingleObject</code>.</li>
+                    <li>An I/O completion port (IOCP), the scalable way to
+                        handle many operations at once.</li>
+                    <li>A callback function, less common but possible.</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>The key insight:</strong> Overlapped I/O lets one
+                    thread manage many handles. Instead of dedicating a thread
+                    to each pipe (or serial port), you issue reads and wait
+                    for any of them to complete. This is how you scale to
+                    hundreds of connections without hundreds of threads.
+                </div>
+                <p>
+                    <strong>The catch:</strong> Overlapped I/O is more complex
+                    to code. Every operation needs an
+                    <code>OVERLAPPED</code> structure, and you have to manage
+                    the lifetime of that structure until the operation
+                    completes. It's easy to introduce subtle bugs where you
+                    free the structure too early, or you forget to check
+                    <code>GetLastError() == ERROR_IO_PENDING</code>.
+                </p>
+            </section>
+
+            <!-- THE COMPORT PROJECT -->
+            <section>
+                <h2>How I Used Pipes in ComPort</h2>
+                <p>
+                    ComPort is a serial terminal and data logger. The core
+                    architecture looks like this:
+                </p>
+                <ul>
+                    <li><strong>Reader thread</strong>: continuously reads
+                        bytes from the COM port with <code>ReadFile</code>.</li>
+                    <li><strong>Writer thread</strong>: takes user input and
+                        writes it to the COM port.</li>
+                    <li><strong>UI thread</strong>: displays incoming data
+                        and accepts commands.</li>
+                </ul>
+                <p>
+                    The problem: the reader thread has data, and the UI thread
+                    needs it. I could have used a shared buffer with a mutex,
+                    but that's error-prone and adds locking overhead. Instead,
+                    I used an <strong>anonymous pipe</strong> between the
+                    reader thread and the UI thread.
+                </p>
+                <p>
+                    Here's the simplified flow:
+                </p>
+                <div class="script-container">
+                    <code>
+// In the reader thread:
+BYTE buffer[1024];
+DWORD bytesRead;
+while (ReadFile(hComPort, buffer, sizeof(buffer), &bytesRead, NULL)) {
+    DWORD written;
+    WriteFile(hPipeWrite, buffer, bytesRead, &written, NULL);
+}
+
+// In the UI thread:
+BYTE buffer[1024];
+DWORD bytesRead;
+while (ReadFile(hPipeRead, buffer, sizeof(buffer), &bytesRead, NULL)) {
+    // Append to the display
+    AppendToConsole(buffer, bytesRead);
+}
+</code>
+                </div>
+                <p>
+                    Wait, but I just said anonymous pipes are between
+                    processes. How does this work within one process? The
+                    answer is that <strong>pipes work perfectly well within a
+                        single process</strong>. The two ends are just two
+                    handles. I created the pipe with
+                    <code>CreatePipe</code>, kept the read end for the UI
+                    thread, and passed the write end to the reader thread. No
+                    process spawning required.
+                </p>
+                <p>
+                    The pipe gives me a clean, kernel-managed buffer between
+                    the two threads. The reader thread blocks on
+                    <code>WriteFile</code> if the pipe is full (which
+                    naturally throttles it), and the UI thread blocks on
+                    <code>ReadFile</code> until data arrives. No explicit
+                    synchronization needed.
+                </p>
+                <div class="highlight-box">
+                    <strong>Why not just use a thread-safe queue?</strong> I
+                    could have. But pipes gave me a few things for free:
+                    <ul>
+                        <li>Kernel-managed buffering, so no manual memory
+                            management.</li>
+                        <li>Backpressure: if the UI can't keep up, the pipe
+                            fills and the reader blocks, preventing unbounded
+                            memory growth.</li>
+                        <li>Blocking semantics: the UI thread just waits on
+                            a read, which is simpler than condition variables
+                            and locks.</li>
+                    </ul>
+                </div>
+                <p>
+                    For the command channel (UI to serial port), I used a
+                    second anonymous pipe in the opposite direction. Two
+                    pipes, two directions, clean and simple.
+                </p>
+            </section>
+
+            <!-- PITFALLS -->
+            <section>
+                <h2>Pitfalls I Ran Into</h2>
+                <p>
+                    No project goes perfectly, and pipes have a few sharp
+                    edges. Here are the ones that bit me:
+                </p>
+                <ul>
+                    <li><strong>Forgetting to close the write handle.</strong>
+                        If the write end of a pipe is still open somewhere,
+                        the read end will never see EOF. I had a bug where the
+                        UI thread's <code>ReadFile</code> would hang forever
+                        because a stray handle kept the pipe alive. The fix:
+                        close every handle exactly once, and use
+                        <code>DuplicateHandle</code> only when you actually
+                        need a copy.</li>
+                    <li><strong>Buffer size assumptions.</strong> I initially
+                        assumed a 4 KB pipe buffer would be enough for bursts
+                        of serial data. It wasn't. At 921600 baud, a few
+                        milliseconds of data can exceed that. The fix was to
+                        use a larger buffer and to never assume a
+                        <code>WriteFile</code> would complete without
+                        blocking.</li>
+                    <li><strong>Overlapped I/O structure lifetime.</strong>
+                        When I experimented with overlapped reads on the
+                        serial port, I made the classic mistake of allocating
+                        the <code>OVERLAPPED</code> structure on the stack.
+                        The call returned
+                        <code>ERROR_IO_PENDING</code>, the function returned,
+                        and the stack memory was reused before the operation
+                        completed. The fix: allocate <code>OVERLAPPED</code>
+                        structures on the heap (or as member variables) and
+                        free them only after
+                        <code>GetOverlappedResult</code> says the operation
+                        is done.</li>
+                    <li><strong>Message mode confusion.</strong> I tried
+                        using message mode for the command pipe, thinking it
+                        would preserve command boundaries. It did, but it
+                        also meant that if the reader's buffer was too small
+                        for a message, the read failed with
+                        <code>ERROR_MORE_DATA</code> and the rest of the
+                        message was lost. Byte mode with a length-prefix
+                        turned out to be more robust for my use case.</li>
+                </ul>
+            </section>
+
+            <!-- QUICK COMPARISON -->
+            <section>
+                <h2>Quick Comparison</h2>
+                <table class="fix-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Anonymous Pipe</th>
+                            <th>Named Pipe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Name</strong></td>
+                            <td>None</td>
+                            <td><code>\\.\pipe\Name</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Direction</strong></td>
+                            <td>One-way</td>
+                            <td>One-way or duplex</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Scope</strong></td>
+                            <td>Local, typically parent-child</td>
+                            <td>Local or network, any process</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Overlapped I/O</strong></td>
+                            <td>Limited</td>
+                            <td>Full support</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Best for</strong></td>
+                            <td>Thread-to-thread data flow, child process
+                                redirection</td>
+                            <td>Client-server IPC, services, cross-process
+                                communication</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>
+                    The trade-off is clear: anonymous pipes are simpler but
+                    limited in scope, while named pipes are more flexible but
+                    require more setup and lifecycle management.
+                </p>
+            </section>
+
+            <!-- SUMMARY -->
+            <section>
+                <h2>Summary</h2>
+                <p>
+                    Windows pipes are a fundamental IPC primitive that every
+                    systems programmer should know. The key takeaways:
+                </p>
+                <ul>
+                    <li><strong>Anonymous pipes</strong> are perfect for
+                        simple, one-way data flow, especially between
+                        threads in the same process or between a parent and
+                        child process.</li>
+                    <li><strong>Named pipes</strong> are the full-featured
+                        option: named, duplex-capable, and usable between any
+                        processes on the same machine (or across a network).</li>
+                    <li><strong>Blocking I/O</strong> is simple but ties up a
+                        thread. <strong>Overlapped I/O</strong> is more
+                        complex but scales to many handles with few threads.</li>
+                    <li>In ComPort, anonymous pipes gave me a clean,
+                        kernel-managed buffer between the serial reader thread
+                        and the UI thread, with no mutexes, no shared state,
+                        and no headaches.</li>
+                </ul>
+                <p>
+                    If you're building anything on Windows that involves
+                    moving data between threads or processes, pipes should be
+                    in your toolbox. They're not glamorous, but they work.
+                </p>
+            </section>
+
+            <!-- REFERENCES -->
+            <section>
+                <h2>References</h2>
+                <ul>
+                    <li><a
+                            href="https://learn.microsoft.com/en-us/windows/win32/ipc/pipes"
+                            target="_blank" rel="noopener noreferrer">Microsoft
+                            Docs: Pipes (Windows IPC)</a></li>
+                    <li><a
+                            href="https://learn.microsoft.com/en-us/windows/win32/ipc/anonymous-pipe-operations"
+                            target="_blank" rel="noopener noreferrer">Microsoft
+                            Docs: Anonymous Pipe Operations</a></li>
+                    <li><a
+                            href="https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-operations"
+                            target="_blank" rel="noopener noreferrer">Microsoft
+                            Docs: Named Pipe Operations</a></li>
+                    <li><a
+                            href="https://learn.microsoft.com/en-us/windows/win32/sync/synchronization-and-overlapped-input-and-output"
+                            target="_blank" rel="noopener noreferrer">Microsoft
+                            Docs: Synchronization and Overlapped I/O</a></li>
+                </ul>
+            </section>
+        </main>
+    </body>
+</html>
