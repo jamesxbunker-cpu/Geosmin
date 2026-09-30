@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Project Planning · com-port-api</title>
+        <meta name="title"
+            content="com-port-api">
+        <meta name="description"
+            content="A phased project plan for a Windows C library that provides reliable COM port reading via overlapped I/O and a shared daemon for multi-client access.">
+        <meta name="author" content="James Bunker">
+        <meta name="date" content="September 29, 2026">
+        <meta name="keywords"
+            content="COM port, serial, Windows, C library, overlapped I/O, daemon, named pipe, ring buffer">
+        <link rel="canonical"
+            href="https://geosmin.ca/projects/project5/project_index.html">
+        <link rel="stylesheet" href="../post.css">
+        <script src="../../site_header.js"></script>
+        <link rel="stylesheet" href="../../style.css">
+        <link rel="stylesheet" href="../project.css" />
+
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <style>
+        .highlight-box { background: #f0f7ff; padding: 1rem 1.5rem; border-left: 4px solid #1e90ff; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .fix-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        .fix-table th { background: #2c3e50; color: white; padding: 0.5rem; text-align: left; }
+        .fix-table td, .fix-table th { border: 1px solid #ddd; padding: 0.5rem; }
+        .fix-table tr:nth-child(even) { background: #f9f9f9; }
+        .command-block { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; font-family: monospace; overflow-x: auto; }
+        .command-block .prompt { color: #6a9955; }
+        .success { color: #2ecc71; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .step { background: #eaf4fb; padding: 0.2rem 0.8rem; border-radius: 20px; display: inline-block; margin-bottom: 0.5rem; }
+        hr { margin: 2rem 0; }
+        .project-goal { background: #f0f7ff; padding: 1rem 1.5rem; border-left: 4px solid #1e90ff; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .project-goal strong { color: #1e40af; }
+        .math-block { background: #f8fafc; padding: 1rem 1.5rem; border-radius: 8px; margin: 1rem 0; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.95rem; border-left: 4px solid #64748b; }
+        .math-block strong { color: #1e293b; }
+        .math-block .var-list { margin: 0.75rem 0 0 0; padding: 0.75rem 0 0 0; border-top: 1px dashed #cbd5e1; font-size: 0.9rem; color: #475569; }
+        .math-block .var-list li { margin-bottom: 0.25rem; }
+        .phase-label { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #1e40af; background: #eef2ff; padding: 0.25rem 0.9rem; border-radius: 30px; display: inline-block; margin-bottom: 0.5rem; border: 1px solid #c7d2fe; }
+        .math-inline { font-family: 'Consolas', 'Monaco', monospace; background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: #0f172a; }
+        .code-ref { background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; color: #0f172a; }
+    </style>
+    </head>
+    <body>
+        <site-header></site-header>
+        <div class="project-content">
+
+            <header>
+                <h1>com-port-api</h1>
+                <p class="subtitle">
+                    A phased plan to build a Windows C library for reliable COM
+                    port reading: start with direct, overlapped I/O access
+                    (<code>comport</code>), then add a shared daemon
+                    (<code>comstream</code>) for multi-client fan-out.
+                </p>
+                <p class="metadata">
+                    September 29, 2026 &nbsp; · &nbsp; Project &nbsp; ·
+                    &nbsp;
+                    Status: <span class="badge">✅ Operational</span>
+                </p>
+            </header>
+            <hr />
+            <main>
+                <!-- ===== PROJECT GOAL ===== -->
+                <section>
+                    <div class="project-goal">
+                        <strong>Project Goal:</strong> Build a C library that
+                        wraps the Windows serial port API so a program can read
+                        from a COM port reliably without busy-waiting. Provide
+                        two usage models: direct access (<code>comport</code>)
+                        for single-consumer programs, and a shared daemon
+                        (<code>comstream</code>) for multiple local applications
+                        that need the same stream.
+                    </div>
+                </section>
+
+                <!-- ===== OVERVIEW ===== -->
+                <section>
+                    <h2>Overview &amp; Scope</h2>
+                    <p class="intro">
+                        Reading from a Windows COM port is deceptively tricky.
+                        Synchronous <code>ReadFile</code> either blocks forever
+                        or returns immediately with 0 bytes, forcing a busy-wait
+                        loop that burns CPU. Furthermore, COM ports are
+                        <strong>exclusive</strong>: only one process can hold a
+                        given port handle at a time.
+                    </p>
+                    <p>
+                        This plan breaks the problem into two clear phases.
+                        Phase 1 builds a direct-access library
+                        (<code>libcomport.a</code>) using overlapped I/O and
+                        event-driven waiting. Phase 2 builds a shared daemon
+                        (<code>comstreamd.exe</code>) and client library
+                        (<code>libcomstream.a</code>) so multiple programs can
+                        consume the same serial stream via named pipes.
+                    </p>
+                    <div class="highlight-box">
+                        <strong>Within Scope:</strong> Windows serial API
+                        wrappers, overlapped (async) I/O, <code>WaitCommEvent
+                            / EV_RXCHAR</code> event handling,
+                        <code>ClearCommError</code> recovery, a ring buffer for
+                        non-blocking reads, a named-pipe daemon, and a
+                        multi-client fan-out protocol.
+                        <br><br>
+                        <strong>Out of scope:</strong> Cross-platform support
+                        (Linux/macOS), configurable parity/stop bits (planned
+                        for later), and a Windows service wrapper (on the
+                        roadmap).
+                    </div>
+                </section>
+
+                <!-- ===== PHASE 1 ===== -->
+                <section>
+                    <h2>Phase 1 · Direct COM Port Access
+                        (<code>comport</code>)</h2>
+                    <span class="phase-label">Phase 1</span>
+                    <p>
+                        The first step is a library that lets a single C program
+                        open a COM port, read bytes, and close it—without
+                        polling. This phase is intentionally simple: no daemon,
+                        no shared access. It solves the core problem of
+                        reliable, event-driven serial reads.
+                    </p>
+
+                    <h3>Background</h3>
+                    <p>
+                        The Windows serial API is powerful but low-level. A
+                        naive read loop looks like this:
+                    </p>
+                    <div class="command-block">
+                        <span class="prompt">// The wrong way: busy-waiting</span><br>
+                        while (1) {<br>
+                        &nbsp;&nbsp;DWORD n;<br>
+                        &nbsp;&nbsp;ReadFile(h, buf, sizeof(buf), &amp;n, NULL);<br>
+                        &nbsp;&nbsp;if (n &gt; 0) process(buf, n);<br>
+                        }<br>
+                        <span class="prompt">// This pins a CPU core at 100%.</span>
+                    </div>
+                    <p>
+                        The correct approach uses <strong>overlapped I/O</strong>
+                        with an event handle. The read is issued
+                        asynchronously and the thread sleeps in the kernel
+                        until <code>WaitCommEvent</code> signals
+                        <code>EV_RXCHAR</code> (a character has arrived). This
+                        yields ~0% idle CPU.
+                    </p>
+
+                    <h3>Why It Matters</h3>
+                    <table class="fix-table">
+                        <thead>
+                            <tr><th>Problem</th><th>Naive Approach</th><th>Overlapped
+                                    I/O</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>CPU Usage</strong></td>
+                                <td>100% core, busy-waiting on
+                                    <code>ReadFile</code>.</td>
+                                <td>~0% idle CPU; thread sleeps in the
+                                    kernel.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Latency</strong></td>
+                                <td>Polling interval adds delay.</td>
+                                <td>Event fires immediately on
+                                    <code>EV_RXCHAR</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reliability</strong></td>
+                                <td>Missed bytes if the loop stalls.</td>
+                                <td>Driver RX buffer is drained promptly.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Error Recovery</strong></td>
+                                <td>Silent failures on overrun/framing
+                                    errors.</td>
+                                <td><code>ClearCommError</code> recovers from
+                                    line errors.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="highlight-box">
+                        <strong>✅ Expected result:</strong> A library that
+                        reads bytes reliably from a COM port with negligible CPU
+                        usage, clean timeout semantics, and error recovery. This
+                        is the foundation for Phase 2.
+                    </div>
+
+                    <h3>Phase 1 Deliverables</h3>
+                    <ul>
+                        <li><code>serial.c</code> / <code>serial.h</code> —
+                            internal serial port API.</li>
+                        <li><code>comport.c</code> / <code>comport.h</code> —
+                            public direct-access API.</li>
+                        <li><code>libcomport.a</code> — static library for
+                            linking into other projects.</li>
+                        <li><code>readcom.exe</code> — standalone diagnostic
+                            reader that prints incoming bytes as hex.</li>
+                        <li><code>comport_example.exe</code> — demo consumer
+                            showing the minimal read loop.</li>
+                    </ul>
+
+                    <h3>Phase 1 API Reference</h3>
+                    <div class="math-block">
+                        <strong>Public API (<code>comport.h</code>):</strong><br><br>
+                        <span class="math-inline">comport_t *comport_open(const char *port, unsigned baud);</span><br>
+                        <span class="math-inline">int comport_read(comport_t *c, void *buf, size_t len, unsigned timeout_ms);</span><br>
+                        <span class="math-inline">int comport_write(comport_t *c, const void *buf, size_t len);</span><br>
+                        <span class="math-inline">void comport_close(comport_t *c);</span><br>
+                        <span class="math-inline">const char *comport_name(const comport_t *c);</span>
+                        <ul class="var-list">
+                            <li><strong>comport_open</strong> — opens a port
+                                (e.g., "COM3") at a given baud rate. Returns
+                                NULL on failure.</li>
+                            <li><strong>comport_read</strong> — reads up to
+                                <code>len</code> bytes. Returns:
+                                <ul>
+                                    <li><code>&gt; 0</code> — bytes copied</li>
+                                    <li><code>0</code> — timeout, no data</li>
+                                    <li><code>&lt; 0</code> — port lost or
+                                        unrecoverable error</li>
+                                </ul>
+                                Pass <code>COMPORT_WAIT_INFINITE</code> to block
+                                until data arrives.
+                            </li>
+                            <li><strong>comport_write</strong> — writes bytes
+                                to the port.</li>
+                            <li><strong>comport_close</strong> — closes the
+                                port and frees resources.</li>
+                            <li><strong>comport_name</strong> — returns the
+                                port name (e.g., "COM3").</li>
+                        </ul>
+                    </div>
+
+                    <h3>Phase 1 Integration Example</h3>
+                    <div class="command-block">
+                        <span class="prompt">// minimal_consumer.c</span><br>
+                        #include "comport.h"<br>
+                        #include &lt;stdio.h&gt;<br><br>
+                        int main(void) {<br>
+                        &nbsp;&nbsp;comport_t *c = comport_open("COM3", 115200);<br>
+                        &nbsp;&nbsp;if (!c) return 1;<br><br>
+                        &nbsp;&nbsp;unsigned char buf[256];<br>
+                        &nbsp;&nbsp;while (1) {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;int n = comport_read(c, buf, sizeof(buf), 1000);<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if (n &lt; 0) break;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* port lost */<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if (n == 0) continue;&nbsp;&nbsp;/* timeout */<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf, 1, n, stdout);<br>
+                        &nbsp;&nbsp;}<br><br>
+                        &nbsp;&nbsp;comport_close(c);<br>
+                        &nbsp;&nbsp;return 0;<br>
+                        }<br><br>
+                        <span class="prompt">// Link against libcomport.a:</span><br>
+                        gcc -I inc minimal_consumer.c libcomport.a -lkernel32 -o my-app.exe
+                    </div>
+                </section>
+
+                <hr />
+
+                <!-- ===== PHASE 2 ===== -->
+                <section>
+                    <h2>Phase 2 · Shared Daemon &amp; Multi-Client Fan-Out
+                        (<code>comstream</code>)</h2>
+                    <span class="phase-label">Phase 2</span>
+                    <p>
+                        Phase 1 proves that direct access works, but it has a
+                        critical limitation: <strong>Windows COM ports are
+                            exclusive</strong>. If your program holds the port
+                        open, no other program can read from it. Phase 2 solves
+                        this by introducing a daemon that owns the port and
+                        shares the byte stream via named pipes.
+                    </p>
+
+                    <h3>Background</h3>
+                    <p>
+                        A <strong>daemon</strong> (<code>comstreamd.exe</code>)
+                        opens the COM port and reads bytes continuously. It
+                        writes those bytes into a <strong>1 MB ring
+                            buffer</strong> and serves them to clients over a
+                        named pipe (<code>\\.\pipe\comstream</code>). Each
+                        client gets its own cursor into the ring buffer, so a
+                        slow client falls behind without stalling the serial
+                        reader.
+                    </p>
+                    <p>
+                        The client library (<code>libcomstream.a</code>)
+                        connects to the daemon's pipe and provides the same
+                        read semantics as <code>comport</code>. Multiple
+                        programs can connect simultaneously and all receive the
+                        same byte stream.
+                    </p>
+
+                    <div class="math-block">
+                        <strong>Architecture:</strong><br><br>
+                        <span class="math-inline">COM Port → comstreamd.exe → Ring Buffer → Named Pipe → Client(s)</span>
+                        <ul class="var-list">
+                            <li><strong>COM Port</strong> — physical or virtual
+                                serial device (e.g., COM3).</li>
+                            <li><strong>comstreamd.exe</strong> — daemon that
+                                owns the port and reads bytes.</li>
+                            <li><strong>Ring Buffer</strong> — 1 MB circular
+                                buffer; oldest bytes overwritten when full.</li>
+                            <li><strong>Named Pipe</strong> —
+                                <code>\\.\pipe\comstream</code> for local
+                                IPC.</li>
+                            <li><strong>Client(s)</strong> — any number of
+                                programs using <code>libcomstream.a</code>.</li>
+                        </ul>
+                    </div>
+
+                    <h3>Why a Ring Buffer?</h3>
+                    <p>
+                        The serial reader must <strong>never block</strong>. If
+                        it stalls, the driver's RX buffer fills and bytes are
+                        lost. A fixed-size ring buffer means the reader can
+                        always write (worst case, overwriting the oldest unread
+                        data), and each client tracks its own cursor. A slow
+                        client falls behind; the reader does not.
+                    </p>
+
+                    <h3>Sensor Fusion Algorithms (Multi-Client Scenarios)</h3>
+                    <table class="fix-table">
+                        <thead>
+                            <tr><th>Scenario</th><th>Recommended Library</th><th>Reason</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Single Program</strong></td>
+                                <td><code>comport</code></td>
+                                <td>Simplest path; no daemon overhead.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Multiple Programs</strong></td>
+                                <td><code>comstream</code></td>
+                                <td>One port owner, many consumers.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Logging + Live View</strong></td>
+                                <td><code>comstream</code></td>
+                                <td>One client logs, another visualizes.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Survives No Consumer</strong></td>
+                                <td><code>comstream</code></td>
+                                <td>Daemon keeps reading even with zero clients.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="highlight-box">
+                        <strong>✅ The key insight:</strong> You cannot share a
+                        Windows COM port. Either your program is the only
+                        consumer (use <code>comport</code>), or you run a daemon
+                        that owns the port and fans out the stream to any number
+                        of clients (use <code>comstream</code>).
+                    </div>
+
+                    <h3>Phase 2 Deliverables</h3>
+                    <ul>
+                        <li><code>ringbuf.c</code> / <code>ringbuf.h</code> —
+                            ring buffer implementation with per-client
+                            cursors.</li>
+                        <li><code>daemon.c</code> — <code>comstreamd.exe</code>,
+                            the COM-to-pipe server.</li>
+                        <li><code>comstream.c</code> /
+                            <code>comstream.h</code> — client library API.</li>
+                        <li><code>libcomstream.a</code> — static library for
+                            clients.</li>
+                        <li><code>client.exe</code> — simple pipe-to-stdout
+                            client.</li>
+                        <li><code>example_consumer.exe</code> — demo using
+                            <code>libcomstream.a</code>.</li>
+                        <li><code>ringtest.exe</code> — unit tests for the ring
+                            buffer.</li>
+                    </ul>
+
+                    <h3>Phase 2 API Reference</h3>
+                    <div class="math-block">
+                        <strong>Client API (<code>comstream.h</code>):</strong><br><br>
+                        <span class="math-inline">comstream_t *comstream_open(const char *pipe_name, unsigned wait_ms);</span><br>
+                        <span class="math-inline">int comstream_read(comstream_t *cs, void *buf, size_t len, unsigned timeout_ms);</span><br>
+                        <span class="math-inline">void comstream_close(comstream_t *cs);</span><br>
+                        <span class="math-inline">const char *comstream_pipe_name(const comstream_t *cs);</span>
+                        <ul class="var-list">
+                            <li><strong>comstream_open</strong> — connects to
+                                the daemon's named pipe. Pass
+                                <code>COMSTREAM_DEFAULT_PIPE</code> for
+                                <code>\\.\pipe\comstream</code>.</li>
+                            <li><strong>comstream_read</strong> — same return
+                                semantics as <code>comport_read</code>.
+                                Pass <code>COMSTREAM_WAIT_INFINITE</code> to
+                                block forever.</li>
+                            <li><strong>comstream_close</strong> —
+                                disconnects from the pipe.</li>
+                            <li><strong>comstream_pipe_name</strong> — returns
+                                the pipe name.</li>
+                        </ul>
+                    </div>
+
+                    <h3>Phase 2 Usage Example</h3>
+                    <div class="command-block">
+                        <span class="prompt"># Terminal 1 — start the daemon</span><br>
+                        ./comstreamd.exe COM3 115200<br>
+                        <span class="prompt"># [daemon] serial open on COM3 @ 115200</span><br>
+                        <span class="prompt"># [daemon] waiting for client...</span><br><br>
+                        <span class="prompt"># Terminal 2 — connect a consumer</span><br>
+                        #include "comstream.h"<br>
+                        #include &lt;stdio.h&gt;<br><br>
+                        int main(void) {<br>
+                        &nbsp;&nbsp;comstream_t *cs = comstream_open(COMSTREAM_DEFAULT_PIPE, 5000);<br>
+                        &nbsp;&nbsp;if (!cs) return 1;<br><br>
+                        &nbsp;&nbsp;unsigned char buf[256];<br>
+                        &nbsp;&nbsp;while (1) {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;int n = comstream_read(cs, buf, sizeof(buf), 1000);<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if (n &lt; 0) break;<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if (n == 0) continue;<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;fwrite(buf, 1, n, stdout);<br>
+                        &nbsp;&nbsp;}<br><br>
+                        &nbsp;&nbsp;comstream_close(cs);<br>
+                        &nbsp;&nbsp;return 0;<br>
+                        }<br><br>
+                        <span class="prompt"># Start as many consumers as you want.</span><br>
+                        <span class="prompt"># They all receive the same stream.</span>
+                    </div>
+                </section>
+
+                <hr />
+
+                <!-- ===== PHASE 3 (FUTURE) ===== -->
+                <section>
+                    <h2>Phase 3 (Future) · Production Hardening</h2>
+                    <span class="phase-label">Optional Extension</span>
+                    <p>
+                        The core library works, but production use requires
+                        handling edge cases. This phase is not required for the
+                        core project but is documented for completeness.
+                    </p>
+                    <ul>
+                        <li><strong>Slow-Client Detection / Drop Policy:</strong>
+                            If a client falls too far behind, the daemon
+                            should detect this and either drop the client or
+                            skip ahead in the ring buffer.</li>
+                        <li><strong>Serial Reconnect:</strong> If the USB
+                            cable is unplugged, the daemon should attempt to
+                            reopen the port automatically.</li>
+                        <li><strong>Configurable Parity / Stop Bits:</strong>
+                            Add CLI flags and
+                            <code>comport_open_ex</code> for non-8N1
+                            configurations.</li>
+                        <li><strong>Windows Service Wrapper:</strong> Run
+                            <code>comstreamd.exe</code> as a background
+                            service.</li>
+                        <li><strong>Optional Framing Protocol:</strong>
+                            Length-prefixed messages with timestamps.</li>
+                        <li><strong>Test Harness:</strong> Unit and
+                            integration tests for both libraries.</li>
+                    </ul>
+                    <div class="math-block">
+                        <strong>Slow-client policy (pseudocode):</strong><br><br>
+                        if (client_cursor &lt; write_cursor - RING_SIZE + margin):<br>
+                        &nbsp;&nbsp;drop_client(client)<br>
+                        &nbsp;&nbsp;log("client too slow, dropped")<br>
+                        <ul class="var-list">
+                            <li><strong>client_cursor</strong> — the client's
+                                current read position in the ring buffer.</li>
+                            <li><strong>write_cursor</strong> — the daemon's
+                                current write position.</li>
+                            <li><strong>RING_SIZE</strong> — total capacity of
+                                the ring buffer (1 MB).</li>
+                            <li><strong>margin</strong> — safety buffer to
+                                avoid overwriting unread data.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <hr />
+
+                <!-- ===== REFERENCES ===== -->
+                <section>
+                    <h2>References</h2>
+                    <ul>
+                        <li><a
+                                href="https://github.com/jamesxbunker-cpu/com-port-api"
+                                target="_blank"
+                                rel="noopener noreferrer">com-port-api on
+                                GitHub</a>: <br>Source code, README, and
+                            build instructions.</li>
+                        <li><a
+                                href="https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-readfile"
+                                target="_blank"
+                                rel="noopener noreferrer">ReadFile
+                                (Microsoft Docs)</a>: <br>Overlapped I/O
+                            reference for asynchronous reads.</li>
+                        <li><a
+                                href="https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-waitcommevent"
+                                target="_blank"
+                                rel="noopener noreferrer">WaitCommEvent
+                                (Microsoft Docs)</a>: <br>Event-driven
+                            serial communication reference.</li>
+                        <li><a
+                                href="https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipes"
+                                target="_blank"
+                                rel="noopener noreferrer">Named Pipes
+                                (Microsoft Docs)</a>: <br>Inter-process
+                            communication for local clients.</li>
+                        <li><a
+                                href="https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-clearcommerror"
+                                target="_blank"
+                                rel="noopener noreferrer">ClearCommError
+                                (Microsoft Docs)</a>: <br>Recovering from
+                            serial line errors.</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </body>
+</html>
