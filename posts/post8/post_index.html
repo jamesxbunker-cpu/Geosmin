@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Embedded Systems and Controls/Automation: Similarities and
+            Differences | James Bunker</title>
+        <meta name="title" content="Embedded Systems and Controls/Automation:
+            Similarities and Differences" />
+        <meta name="description"
+            content="A practical comparison of C-based microcontroller embedded systems and PLC-based controls/automation engineering: shared foundations, fundamental differences, and how to choose.">
+        <meta name="author" content="James Bunker">
+        <meta name="date" content="September 30, 2026">
+        <meta name="keywords"
+            content="embedded systems, microcontrollers, PLC, automation, controls, C, IEC 61131-3, ladder logic, RTOS, scan cycle, real-time" />
+        <link rel="stylesheet" href="../post.css">
+        <link rel="stylesheet" href="../../style.css" />
+        <script src="../../site_header.js"></script>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <style>
+        .fix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        .fix-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        .fix-table td, .fix-table th {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+        }
+        .fix-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .highlight-box {
+            background: #f0f7ff;
+            padding: 1rem 1.5rem;
+            border-left: 4px solid #1e90ff;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .script-container {
+            background: #0d1117;
+            color: #e6edf3;
+            border-radius: 16px;
+            padding: 1.5rem 1.8rem;
+            margin: 1.5rem 0 2rem 0;
+            overflow-x: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+            tab-size: 2;
+        }
+        .script-container code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+        code {
+            background: #eef1f5;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        </style>
+    </head>
+    <body>
+        <site-header></site-header>
+        <header class="page-header">
+            <h1>Embedded Systems and Controls/Automation: Similarities and
+                Differences</h1>
+            <p class="subtitle">C-based microcontroller development and PLC
+                programming share the same physics and mathematics, but
+                diverge on execution models, engineering methodology, and
+                lifecycle ownership.</p>
+            <p class="metadata">September 30, 2026 &nbsp;|&nbsp; Embedded
+                Systems, Controls, Automation</p>
+        </header>
+        <hr />
+
+        <main>
+            <!-- INTRODUCTION -->
+            <section>
+                <h2>Introduction</h2>
+                <p class="intro">
+                    If you've spent time in both worlds, you know the feeling:
+                    embedded systems engineers and controls/automation
+                    engineers solve seemingly similar problems (reading
+                    sensors, driving actuators, closing control loops), yet
+                    they speak different languages, use different tools, and
+                    often misunderstand each other's constraints.
+                </p>
+                <p>
+                    This post is a practical comparison of the two
+                    disciplines, with a focus on <strong>C-based
+                        microcontroller embedded systems</strong> and
+                    <strong>PLC-based controls/automation</strong>. I'll cover
+                    where they overlap, where they fundamentally diverge, how
+                    to choose between them, and where the two fields are
+                    converging.
+                </p>
+            </section>
+
+            <!-- SHARED FOUNDATIONS -->
+            <section>
+                <h2>Shared Foundations: Physics and Mathematics Don't Care
+                    About Your Platform</h2>
+                <p>
+                    At the physical and mathematical layers, the two
+                    disciplines are indistinguishable. A closed-loop control
+                    system, whether implemented in C on a Cortex-M or in
+                    ladder logic on a Siemens S7, follows the same structure:
+                </p>
+                <ul>
+                    <li><strong>Sensor acquisition</strong>: read the
+                        physical quantity (temperature, pressure, position,
+                        current).</li>
+                    <li><strong>Signal conditioning</strong>: filter, scale,
+                        linearize, convert to engineering units.</li>
+                    <li><strong>Control algorithm</strong>: compute the
+                        actuator command (PID, state-space, feedforward,
+                        fuzzy, etc.).</li>
+                    <li><strong>Actuator drive</strong>: output the command
+                        to the physical device (motor, valve, heater).</li>
+                </ul>
+                <p>
+                    Control theory is hardware-agnostic. The transfer
+                    functions, pole placement, transient and steady-state
+                    response, stability margins, all of these are the same
+                    whether you're tuning a PID loop on a TI C2000
+                    microcontroller or configuring a PID function block in a
+                    Rockwell ControlLogix PLC. The difference is in the
+                    tooling and the abstraction level, not the math.
+                </p>
+                <p>
+                    Real-time constraints are also shared. Embedded
+                    real-time systems must complete tasks before deadlines;
+                    a PLC's scan cycle is essentially a real-time constraint.
+                    Both require deterministic behavior within bounded time.
+                </p>
+                <div class="highlight-box">
+                    <strong>The key insight:</strong> If you understand
+                    feedback control, signal processing, and real-time
+                    constraints, you understand the core of both
+                    disciplines. The platform determines <em>how</em> you
+                    implement, not <em>what</em> you implement.
+                </div>
+            </section>
+
+            <!-- EXECUTION MODELS -->
+            <section>
+                <h2>The Fundamental Divide: Execution Models</h2>
+                <p>
+                    The single most important technical difference between
+                    C-based microcontroller development and PLC programming
+                    is the <strong>program execution model</strong>. This is
+                    what you must "unlearn" when migrating between the two.
+                </p>
+
+                <h3>C on Microcontrollers: The Programmer Owns Everything</h3>
+                <p>
+                    In a typical microcontroller program, <code>main()</code>
+                    is an infinite loop that never exits. The developer
+                    controls execution flow, task scheduling, interrupt
+                    priorities, and watchdog timing. This model gives
+                    maximum flexibility:
+                </p>
+                <div class="script-container">
+                    <code>
+int main(void) {
+    hardware_init();
+    while (1) {
+        read_inputs();
+        update_state_machine();
+        drive_outputs();
+        feed_watchdog();
+    }
+}
+</code>
+                </div>
+                <p>
+                    You can implement soft real-time multitasking with a
+                    state machine, introduce task-priority scheduling with
+                    an RTOS (FreeRTOS, Zephyr, ThreadX), or simply poll in a
+                    <code>while(1)</code> loop for the simplest cases. The
+                    programmer decides when everything happens.
+                </p>
+
+                <h3>PLC: The Operating System Owns the Loop</h3>
+                <p>
+                    The PLC program model is fundamentally different.
+                    User-written programs (e.g., Siemens OB1, Rockwell
+                    MainRoutine) are called <em>periodically</em> by the
+                    PLC's operating system, rather than looping on their own.
+                    System tasks (refreshing the I/O image, detecting
+                    interrupts, handling communications) are interleaved with
+                    user program execution.
+                </p>
+                <div class="script-container">
+                    <code>
+// PLC scan cycle (conceptual)
+LOOP:
+    ReadInputs();         // Copy physical inputs to I/O image
+    ExecuteUserProgram(); // Run OB1, MainRoutine, etc.
+    WriteOutputs();       // Copy I/O image to physical outputs
+    HandleCommunications();
+    HandleInterrupts();
+    GOTO LOOP;
+</code>
+                </div>
+                <p>
+                    This means PLC programmers don't write <code>while(1)</code>,
+                    and they shouldn't use loops to wait for signals, because
+                    the PLC scan mechanism already guarantees that all input
+                    states are read at the start of each scan cycle.
+                    Rising-edge detection takes a single instruction
+                    (<code>R_TRIG</code> in IEC 61131-3), rather than the
+                    polling code you'd write in C.
+                </p>
+                <div class="highlight-box">
+                    <strong>The direct consequence:</strong> In PLC,
+                    "blocking" is an anti-pattern. FOR/NEXT loops or long
+                    waits stretch the scan cycle, can trigger watchdog
+                    timeouts, and delay all other logic. PLC programmers
+                    must "forget" the blocking style they're used to in C
+                    and instead organize logic with state machines and
+                    cyclic execution.
+                </div>
+            </section>
+
+            <!-- MEMORY AND RESOURCE MANAGEMENT -->
+            <section>
+                <h2>Memory and Resource Management</h2>
+                <p>
+                    The second major difference is how memory and system
+                    resources are managed.
+                </p>
+                <p>
+                    <strong>Microcontroller C:</strong> The programmer has
+                    direct control over memory layout. Stack, heap, static
+                    allocations, memory-mapped peripherals, all visible and
+                    manageable. This enables extremely efficient use of
+                    limited resources (a few kilobytes of RAM on an 8-bit
+                    MCU), but also means the programmer is responsible for
+                    avoiding stack overflow, heap fragmentation, and
+                    memory leaks.
+                </p>
+                <p>
+                    <strong>PLC:</strong> Memory management is largely
+                    abstracted. The PLC runtime handles allocation for
+                    variables, function block instances, and communication
+                    buffers. The programmer works with symbolic tags and
+                    data blocks rather than raw pointers. This trades some
+                    efficiency for safety and predictability. A PLC program
+                    cannot crash from a null pointer dereference or a buffer
+                    overflow in the same way a C program can.
+                </p>
+                <div class="highlight-box">
+                    <strong>Why this matters:</strong> In safety-critical
+                    automation, the abstraction is a feature, not a bug. A
+                    PLC that can't crash from memory corruption is worth
+                    more than one that's 10% faster but requires expert
+                    programming to avoid undefined behavior.
+                </div>
+            </section>
+
+            <!-- TOOLING AND DEVELOPMENT WORKFLOW -->
+            <section>
+                <h2>Tooling and Development Workflow</h2>
+                <p>
+                    The development experience differs dramatically between
+                    the two worlds.
+                </p>
+                <p>
+                    <strong>Microcontroller C:</strong> Toolchains like GCC,
+                    Clang, IAR, or Keil. Version control with Git. CI/CD
+                    pipelines. Unit testing frameworks (Unity, Ceedling).
+                    Debugging with JTAG/SWD probes, logic analyzers, and
+                    oscilloscopes. The workflow resembles modern software
+                    engineering, with all the benefits and complexities that
+                    entails.
+                </p>
+                <p>
+                    <strong>PLC:</strong> Vendor-specific IDEs (TIA Portal,
+                    Studio 5000, CODESYS). Online monitoring and forcing.
+                    Simulation tools. The workflow is more integrated but
+                    less flexible. You generally can't use Git natively for
+                    ladder logic (though some vendors are adding version
+                    control support), and unit testing is less common.
+                    However, the online debugging experience is superb:
+                    you can watch the program execute in real time, force
+                    I/O, and modify logic without stopping the machine
+                    (in many cases).
+                </p>
+                <div class="highlight-box">
+                    <strong>The trade-off:</strong> Microcontroller
+                    development gives you world-class software engineering
+                    practices but requires you to build your own
+                    infrastructure. PLC development gives you a
+                    purpose-built environment for industrial control but
+                    with less flexibility for software engineering best
+                    practices.
+                </div>
+            </section>
+
+            <!-- SELECTION LOGIC -->
+            <section>
+                <h2>Selection Logic: When to Use Which</h2>
+                <p>
+                    Choosing between a microcontroller and a PLC is
+                    fundamentally a trade-off among <strong>speed, cost,
+                        development model, and lifecycle ownership</strong>.
+                </p>
+
+                <h3>Microcontroller Strengths and Costs</h3>
+                <ul>
+                    <li><strong>Strengths:</strong> Low unit cost
+                        (especially at volume), microsecond-level response,
+                        flexible hardware design, full control over
+                        peripherals, small physical footprint.</li>
+                    <li><strong>Costs:</strong> Long development cycles,
+                        custom PCB design required, field maintenance
+                        requires specialized personnel, firmware updates
+                        need physical access or a bootloader, certification
+                        (UL, CE, etc.) is the integrator's responsibility.</li>
+                </ul>
+
+                <h3>PLC Strengths and Costs</h3>
+                <ul>
+                    <li><strong>Strengths:</strong> Fast development,
+                        modular I/O that's plug-and-play, field service
+                        engineers can diagnose and modify logic on site,
+                        standardized programming environment (IEC 61131-3),
+                        pre-certified hardware, extensive diagnostics.</li>
+                    <li><strong>Costs:</strong> High unit cost, scan cycles
+                        typically in the 1 ms to tens of milliseconds range,
+                        vendor lock-in, less flexibility for custom
+                        hardware interfaces.</li>
+                </ul>
+
+                <h3>The Deciding Factors</h3>
+                <p>
+                    In practice, response speed requirements act as a hard
+                    filter. If the control loop needs sub-millisecond
+                    response, a PLC is usually the wrong choice unless you
+                    use dedicated modules with high-speed I/O coprocessors.
+                    Conversely, if response requirements are in the tens of
+                    milliseconds or above, and the system involves
+                    multi-device coordination, remote diagnostics, and
+                    field maintainability, the engineering advantages of a
+                    PLC far outweigh its cost disadvantages.
+                </p>
+                <p>
+                    The second filter is <strong>production volume and
+                        lifecycle</strong>. A consumer product shipping
+                    100,000 units per year will almost always use a
+                    microcontroller, because the per-unit cost difference
+                    dominates. A one-off industrial machine or a process
+                    plant will almost always use a PLC, because the
+                    engineering and maintenance costs dominate.
+                </p>
+            </section>
+
+            <!-- COMPARISON TABLE -->
+            <section>
+                <h2>Quick Comparison</h2>
+                <table class="fix-table">
+                    <thead>
+                        <tr>
+                            <th>Aspect</th>
+                            <th>C / Microcontroller</th>
+                            <th>PLC / Automation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Execution model</strong></td>
+                            <td>Programmer-controlled infinite loop or
+                                RTOS</td>
+                            <td>OS-controlled periodic scan cycle</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Response time</strong></td>
+                            <td>Microseconds to milliseconds</td>
+                            <td>Milliseconds to tens of milliseconds</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Memory management</strong></td>
+                            <td>Manual, direct control</td>
+                            <td>Abstracted, symbolic tags</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Programming languages</strong></td>
+                            <td>C, C++, assembly, Rust</td>
+                            <td>Ladder, FBD, SCL/ST, IL, CFC</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tooling</strong></td>
+                            <td>GCC/Clang, Git, CI/CD, JTAG</td>
+                            <td>Vendor IDEs, online monitoring,
+                                simulation</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Unit cost</strong></td>
+                            <td>Low (especially at volume)</td>
+                            <td>High</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Field maintenance</strong></td>
+                            <td>Specialized personnel, firmware
+                                updates</td>
+                            <td>Electricians/technicians, online
+                                edits</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Certification</strong></td>
+                            <td>Integrator's responsibility</td>
+                            <td>Pre-certified hardware</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Best for</strong></td>
+                            <td>Mass-produced products, high-speed
+                                control, custom hardware</td>
+                            <td>Industrial machines, process plants,
+                                multi-device coordination</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- CONVERGENCE -->
+            <section>
+                <h2>Convergence: The Lines Are Blurring</h2>
+                <p>
+                    The two worlds are converging, and the best engineers in
+                    this space understand both.
+                </p>
+                <ul>
+                    <li><strong>Microcontrollers are getting PLC-like
+                            tooling.</strong> Vendor HALs (STM32Cube,
+                        MCUXpresso) and RTOS support (FreeRTOS, Zephyr) mimic
+                        the "configure, don't reinvent" philosophy of PLC
+                        function blocks. Model-based design (Simulink,
+                        PLECS) generates production C code from control
+                        diagrams.</li>
+                    <li><strong>PLCs are getting C-like flexibility.</strong>
+                        Vendors offer C/C++ function block integration
+                        (Siemens CFC, Beckhoff TwinCAT), and increasingly
+                        powerful motion control coprocessors blur the line
+                        between soft PLC and dedicated motion
+                        controller.</li>
+                    <li><strong>Edge computing is merging the
+                            stacks.</strong> Industrial edge devices run
+                        Linux and Docker, executing both PLC-like control
+                        logic and C/C++ analytics on the same hardware.</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>The practical takeaway:</strong> The most
+                    effective engineers in this space can write a tight C
+                    state machine on a Cortex-M <em>and</em> structure a PLC
+                    program that a maintenance technician can troubleshoot
+                    at 3 a.m. The similarities are in the physics and the
+                    math. The differences are in the discipline, and knowing
+                    when to apply which discipline is the real skill.
+                </div>
+            </section>
+
+            <!-- SUMMARY -->
+            <section>
+                <h2>Summary</h2>
+                <p>
+                    Embedded systems engineering and controls/automation
+                    engineering are two sides of the same coin. They share
+                    the same physical layer, the same control theory, and
+                    the same real-time constraints. But they differ
+                    fundamentally in execution model, resource management,
+                    tooling, and lifecycle ownership.
+                </p>
+                <p>
+                    The key takeaways:
+                </p>
+                <ul>
+                    <li><strong>Shared foundations:</strong> Physics,
+                        control theory, signal processing, and real-time
+                        constraints are platform-independent.</li>
+                    <li><strong>Fundamental divide:</strong> C on
+                        microcontrollers gives the programmer full control;
+                        PLC programming delegates the execution loop to the
+                        runtime.</li>
+                    <li><strong>Selection logic:</strong> Response speed,
+                        production volume, and lifecycle costs determine
+                        the right choice.</li>
+                    <li><strong>Convergence:</strong> The two worlds are
+                        learning from each other, and the best engineers
+                        understand both.</li>
+                </ul>
+                <p>
+                    If you work in either discipline, spend time in the
+                    other. The perspective will make you better at both.
+                </p>
+            </section>
+
+            <!-- REFERENCES -->
+            <section>
+                <h2>References</h2>
+                <ul>
+                    <li><a
+                            href="https://www.ti.com/microcontrollers-mcus-processors/c2000-real-time-control-mcus/overview.html"
+                            target="_blank" rel="noopener noreferrer">Texas
+                            Instruments: C2000 Real-Time Control
+                            Microcontrollers</a></li>
+                    <li><a
+                            href="https://webstore.iec.ch/publication/1980"
+                            target="_blank" rel="noopener noreferrer">IEC
+                            61131-3: Programmable Controllers, Programming
+                            Languages</a></li>
+                    <li><a
+                            href="https://www.freertos.org/"
+                            target="_blank" rel="noopener noreferrer">FreeRTOS:
+                            Real-Time Operating System for
+                            Microcontrollers</a></li>
+                    <li><a
+                            href="https://www.beckhoff.com/en-en/products/automation/twincat/"
+                            target="_blank" rel="noopener noreferrer">Beckhoff
+                            TwinCAT: Automation Software</a></li>
+                    <li><a
+                            href="https://www.siemens.com/global/en/products/automation/industry-software/automation-software/tia-portal.html"
+                            target="_blank" rel="noopener noreferrer">Siemens
+                            TIA Portal: Totally Integrated
+                            Automation</a></li>
+                </ul>
+            </section>
+        </main>
+    </body>
+</html>
