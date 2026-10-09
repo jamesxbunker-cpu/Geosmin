@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Kernels? I like popcorn! | James Bunker</title>
+        <meta name="title" content="Kernels? I like popcorn!" />
+        <meta name="description"
+            content="A plain-English explanation of what a Linux kernel build actually is, why embedded systems need custom kernels, and the core ideas behind configuration, modules, and cross-compilation." />
+        <meta name="author" content="James Bunker" />
+        <meta name="date" content="October 8, 2026" />
+        <meta name="keywords"
+            content="Linux kernel, kernel build, embedded Linux, Kconfig, modules, cross-compilation, BSP" />
+        <link rel="canonical"
+            href="https://geosmin.ca/posts/post9/post_index.html" />
+        <!-- Stylesheets -->
+        <link rel="stylesheet" href="../post.css" />
+        <script src="../../site_header.js"></script>
+        <link rel="stylesheet" href="../../style.css" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+            sizes="any">
+        <!-- INLINE STYLE: limit image width to fit screen -->
+        <style>
+        /* Ensure images never overflow the viewport / container */
+
+
+        /* Keep figure captions tidy */
+        figure {
+            margin: 1.5rem 0;
+        }
+
+        figcaption {
+            text-align: center;
+            font-style: italic;
+            margin-top: 0.25rem;
+        }
+
+        /* Optional: preserve code/pre readability */
+        pre {
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        code {
+            word-break: break-word;
+        }
+    </style>
+    </head>
+
+    <body>
+        <site-header> </site-header>
+        <header class="page-header">
+            <h1>Kernels? I like popcorn!</h1>
+            <p class="subtitle">
+                What actually happens when you build a kernel, why embedded
+                systems need their own, and the handful of ideas that make it
+                all click.
+            </p>
+            <p class="metadata">
+                October 8, 2026 &nbsp; | &nbsp; Embedded Linux
+            </p>
+        </header>
+
+        <hr />
+
+        <main>
+            <section>
+                <h2>Introduction</h2>
+                <p class="intro">
+                    If you've used Linux for a while, you've probably installed
+                    a kernel update through your package manager. It downloads a
+                    file, reboots, and everything works. You never think about
+                    what's inside that file.
+                </p>
+                <p>
+                    But on embedded systems such as routers, cameras, industrial
+                    controllers, and custom boards; you can't just grab the distro
+                    kernel and call it a day. You have to build one yourself.
+                    And the first time someone says "just build the kernel,"
+                    it sounds like a magic trick (and not the magic smoke kind).
+                </p>
+                <p>
+                    It isn't. It's a recipe, no more difficult than chicken and rice. This article explains the ideas
+                    behind that recipe, without going into the macros.
+                </p>
+            </section>
+
+            <section>
+                <h2>The Kernel Is Just a Program</h2>
+                <p>
+                    At its core, the Linux kernel is a program. It's the first
+                    real program that runs when your system boots, and it's
+                    responsible for talking to hardware, managing memory, and
+                    giving other programs a place to run.
+                </p>
+                <p>
+                    When you install Linux on your laptop, the kernel that comes
+                    with it is a generalist. It includes drivers for thousands
+                    of devices - network cards, webcams, printers, filesystems -
+                    because the distro maintainers don't know what hardware
+                    you'll plug in. It's a big, safe, everything-included
+                    kernel. Imagine you had to install a driver to use bluetooth on your phone, its easier to include everything and let people pick out what they done like.
+                </p>
+                <p>
+                    An embedded system is the opposite. You know exactly what
+                    hardware is on the board. You know there's no printer, no
+                    webcam, no need for ten different filesystems. So why carry
+                    all that dead weight?
+                </p>
+            </section>
+
+            <section>
+                <h2>Why Embedded Systems Build Their Own</h2>
+                <p>
+                    There are three practical reasons:
+                </p>
+                <ul>
+                    <li>
+                        <strong>Storage is small.</strong> A general-purpose
+                        kernel can be several megabytes. On a device with 64 MB
+                        of flash, that's a huge chunk. A trimmed kernel might be
+                        under a megabyte.
+                    </li>
+                    <li>
+                        <strong>Boot time matters.</strong> The more drivers the
+                        kernel probes at startup, the longer it takes to reach
+                        your application. A custom kernel only probes what's
+                        actually there.
+                    </li>
+                    <li>
+                        <strong>Hardware is specific.</strong> Your board might
+                        use a chip that isn't supported in the mainline kernel,
+                        or you might need a vendor patch. You can't get that
+                        from a distro package.
+                    </li>
+                </ul>
+                <p>
+                    So building your own kernel is really about control. You
+                    decide what goes in, and by extension, what stays out.
+                </p>
+            </section>
+
+            <section>
+                <h2>The One Idea That Matters: Configuration</h2>
+                <p>
+                    If you remember nothing else from this article, remember
+                    this: a kernel build is just a configuration file and a
+                    compiler.
+                </p>
+                <p>
+                    The configuration file is called <code>.config</code>. It's
+                    a plain text file full of lines like these:
+                </p>
+
+                <pre><code>CONFIG_NET=y
+CONFIG_USB_SUPPORT=m
+CONFIG_EXT4_FS=y
+# CONFIG_WIRELESS is not set</code></pre>
+
+                <p>
+                    Each line answers a yes/no question about what the kernel
+                    should include:
+                </p>
+                <ul>
+                    <li>
+                        <code>y</code> means "yes, compile this into the
+                        kernel."
+                    </li>
+                    <li>
+                        <code>m</code> means "yes, but as a module that can be
+                        loaded later."
+                    </li>
+                    <li>
+                        <code># ... is not set</code> means "no, leave this
+                        out."
+                    </li>
+                </ul>
+                <p>
+                    That's it. The entire build process reads this file and
+                    compiles exactly what you asked for. Everything else:
+                    the menus, the prompts, the defaults - is just a friendly
+                    way of generating this file. Gotta love plaintext config files!
+                </p>
+            </section>
+
+            <section>
+                <h2>How You Actually Make That File</h2>
+                <p>
+                    You don't write <code>.config</code> by hand. That is unless you have a team dedicated to it. There are thousands of options. Instead, the kernel
+                    gives you tools to generate it.
+                </p>
+                <p>
+                    The most common ones:
+                </p>
+                <ul>
+                    <li>
+                        <strong><code>make defconfig</code></strong> — Asks the
+                        kernel for a sensible default configuration for your
+                        architecture. A starting point.
+                    </li>
+                    <li>
+                        <strong><code>make menuconfig</code></strong> — Opens a
+                        text menu where you can browse and toggle options. This
+                        is how most people fine-tune a kernel.
+                    </li>
+                    <li>
+                        <strong><code>make oldconfig</code></strong> — Takes an
+                        existing <code>.config</code> and updates it for a newer
+                        kernel version. Useful when upgrading.
+                    </li>
+                </ul>
+                <p>
+                    For an embedded board, the vendor usually provides a
+                    <code>defconfig</code> file tailored to that board. You
+                    start with that, then adjust as needed.
+                </p>
+            </section>
+
+            <section>
+                <h2>Built-in vs. Module: The Only Real Decision</h2>
+                <p>
+                    When you're configuring a kernel, you're mostly deciding one
+                    thing for each feature: should this be built in, or loaded
+                    as a module?
+                </p>
+                <p>
+                    A <strong>built-in</strong> feature is compiled directly
+                    into the kernel image. It's always there, ready to go. This
+                    is what you want for anything the system needs to boot —
+                    storage drivers, the console, the interrupt controller.
+                </p>
+                <p>
+                    A <strong>module</strong> is compiled as a separate file
+                    (ending in <code>.ko</code>) that lives on the filesystem.
+                    The kernel loads it when needed. This is good for things
+                    like USB devices or network cards that might not always be
+                    present, or that you want to load later.
+                </p>
+                <p>
+                    On embedded systems, a common strategy is: build in the
+                    bare minimum to boot, and compile everything else as a
+                    module — or leave it out entirely.
+                </p>
+            </section>
+
+            <section>
+                <h2>The Mental Model</h2>
+                <p>
+                    Here's the whole thing in one paragraph:
+                </p>
+                <p>
+                    A kernel build is a configuration file plus a compiler.
+                    The configuration file says what goes in and what stays
+                    out. The compiler turns that into a kernel image and a set
+                    of modules. On embedded systems, you start from a vendor's
+                    default configuration, trim it down to what your board
+                    actually needs, and use a cross-compiler because your board
+                    isn't the same architecture as your build machine.
+                </p>
+                <p>
+                    Everything else — the menus, the options, the build flags —
+                    is detail. The core idea is simple: you're telling the
+                    kernel what to include, and then compiling it.
+                </p>
+            </section>
+
+            <section>
+                <h2>Wrapping Up</h2>
+                <p>
+                    If you've used Linux but never built a kernel, the gap is
+                    smaller than it looks. You already understand the concepts:
+                    configuration, compilation, dependencies. A kernel build
+                    just applies those concepts to a very large, very
+                    configurable program.
+                </p>
+                <p>
+                    Start with <code>make defconfig</code> and
+                    <code>make menuconfig</code> on your own machine. Build a
+                    kernel for the computer you're sitting at. It won't be
+                    optimized, and it might not even boot — but it will
+                    demystify the process. Once you've done it for your laptop,
+                    doing it for an embedded board is just a matter of changing
+                    the architecture and starting from a different default
+                    configuration.
+                </p>
+            </section>
+
+            <section>
+                <h2>Links</h2>
+                <ul>
+                    <li>
+                        Linux Kernel Archives:
+                        <a href="https://kernel.org" target="_blank"
+                            rel="noopener noreferrer">
+                            kernel.org
+                        </a>
+                    </li>
+                    <li>
+                        Kernel documentation:
+                        <a href="https://www.kernel.org/doc/html/latest/"
+                            target="_blank" rel="noopener noreferrer">
+                            The Linux Kernel documentation
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </main>
+    </body>
+
+</html>
