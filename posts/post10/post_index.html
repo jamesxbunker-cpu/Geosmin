@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embedded Linux vs. Microcontrollers | James Bunker</title>
+    <meta name="title" content="Embedded Linux vs. Microcontrollers" />
+    <meta name="description"
+        content="A high-level comparison of embedded Linux and microcontroller programming. When to use each, how they differ, and why the line between them is blurring." />
+    <meta name="author" content="James Bunker" />
+    <meta name="date" content="October 15, 2026" />
+    <meta name="keywords"
+        content="embedded Linux, microcontrollers, MCU, SoC, bare metal, RTOS, embedded systems" />
+    <link rel="canonical"
+        href="https://geosmin.ca/posts/post10/post_index.html" />
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../post.css" />
+    <script src="../../site_header.js"></script>
+    <link rel="stylesheet" href="../../style.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+        sizes="any">
+</head>
+
+<body>
+    <site-header> </site-header>
+    <header class="page-header">
+        <h1>Embedded Linux vs. Microcontrollers</h1>
+        <p class="subtitle">
+            Two worlds, one goal: make hardware do something useful. Here's
+            how to tell which one you actually need.
+        </p>
+        <p class="metadata">
+            October 15, 2026 &nbsp; | &nbsp; Embedded Systems
+        </p>
+    </header>
+
+    <hr />
+
+    <main>
+        <section>
+            <h2>Introduction</h2>
+            <p class="intro">
+                If you're getting into embedded systems, you'll quickly run
+                into two camps. One swears by microcontrollers, tiny chips
+                that cost pennies and run your code directly. The other lives
+                in embedded Linux, where you have a full operating system,
+                memory management, and the ability to run multiple programs
+                at once.
+            </p>
+            <p>
+                Both are "embedded" in the sense that they're computers
+                built into something else. But they solve different problems,
+                and choosing the wrong one can make a project miserable.
+            </p>
+            <p>
+                This article is a high-level comparison. No pinouts, no
+                register maps, no build systems. Just the ideas that help
+                you pick a direction.
+            </p>
+        </section>
+
+        <section>
+            <h2>What Is a Microcontroller, Really?</h2>
+            <p>
+                A microcontroller is a complete computer on a single chip.
+                It has a processor, memory, and peripherals like timers,
+                serial ports, and analog-to-digital converters. But it has
+                no operating system. Your program <em>is</em> the only
+                thing running.
+            </p>
+            <p>
+                When you write code for a microcontroller, you typically
+                start with a main function, initialize the hardware, and
+                then loop forever. There's no scheduler, no file system,
+                no process isolation. Just you and the silicon.
+            </p>
+            <p>
+                This sounds primitive, and in some ways it is. But it's also
+                incredibly predictable. If your code takes 10 microseconds
+                to respond to an interrupt, that's exactly what it will do
+                every single time. No other process will steal the CPU. No
+                background daemon will randomly wake up and ruin your
+                timing.
+            </p>
+        </section>
+
+        <section>
+            <h2>What Is Embedded Linux, Really?</h2>
+            <p>
+                Embedded Linux is the same Linux kernel you'd find on a
+                server or a laptop, running on a smaller board. It comes
+                with all the trappings of a general-purpose operating
+                system: virtual memory, a scheduler, device drivers, a
+                network stack, and the ability to run many programs at once.
+            </p>
+            <p>
+                On a microcontroller, your code owns the entire machine. On
+                embedded Linux, your code is just one process among many.
+                The kernel decides when it runs, how much memory it gets,
+                and what hardware it can touch.
+            </p>
+            <p>
+                This is a trade-off. You lose determinism, but you gain an
+                enormous amount of convenience. You can write your
+                application in Python, use standard libraries, read and
+                write files, and connect to the internet without writing a
+                single network driver.
+            </p>
+        </section>
+
+        <section>
+            <h2>The Core Difference: Determinism vs. Convenience</h2>
+            <p>
+                If you strip away all the details, the choice comes down to
+                one axis: how much do you care about deterministic timing,
+                and how much do you care about ease of development?
+            </p>
+            <ul>
+                <li>
+                    <strong>Microcontrollers win on determinism.</strong>
+                    If you need to toggle a pin exactly every 50
+                    microseconds, or respond to an interrupt within a
+                    guaranteed window, a microcontroller is the right tool.
+                    There's nothing between your code and the hardware.
+                </li>
+                <li>
+                    <strong>Embedded Linux wins on convenience.</strong>
+                    If you need to run a web server, process images, manage
+                    a database, or write code in a high-level language,
+                    Linux gives you all of that for free. You're standing
+                    on the shoulders of decades of software.
+                </li>
+            </ul>
+            <p>
+                Most embedded projects don't sit at either extreme. They
+                fall somewhere in the middle, and the decision is about
+                which trade-offs you're willing to accept.
+            </p>
+        </section>
+
+        <section>
+            <h2>When to Reach for a Microcontroller</h2>
+            <p>
+                Microcontrollers shine when the job is small, repetitive,
+                and timing-sensitive. Some examples:
+            </p>
+            <ul>
+                <li>
+                    <strong>Motor control.</strong> A motor controller needs
+                    to update its output thousands of times per second. Any
+                    jitter in the control loop can cause audible noise or
+                    instability. A microcontroller handles this without
+                    breaking a sweat.
+                </li>
+                <li>
+                    <strong>Sensor reading.</strong> If you're sampling an
+                    accelerometer at a fixed rate and filtering the data,
+                    a microcontroller gives you precise control over when
+                    each sample happens.
+                </li>
+                <li>
+                    <strong>Simple user interfaces.</strong> A few buttons
+                    and an LED display don't need an operating system. A
+                    microcontroller can poll the buttons and update the
+                    display in a loop, using almost no power.
+                </li>
+                <li>
+                    <strong>Battery-powered devices.</strong> Microcontrollers
+                    can sleep in the microamp range and wake on an interrupt
+                    in microseconds. Linux boards typically draw milliamps
+                    even when idle, which drains a battery quickly.
+                </li>
+            </ul>
+            <p>
+                The common thread is that these tasks are well-defined,
+                don't need much memory, and benefit from predictable
+                timing.
+            </p>
+        </section>
+
+        <section>
+            <h2>When to Reach for Embedded Linux</h2>
+            <p>
+                Embedded Linux makes sense when the job is complex,
+                involves networking or storage, or benefits from running
+                multiple programs at once. Examples:
+            </p>
+            <ul>
+                <li>
+                    <strong>Network appliances.</strong> Routers, firewalls,
+                    and VPN gateways need a full TCP/IP stack, packet
+                    filtering, and often a web interface for configuration.
+                    Linux provides all of this out of the box.
+                </li>
+                <li>
+                    <strong>Media devices.</strong> Streaming boxes, cameras,
+                    and audio players need to decode video, manage files,
+                    and handle user input. Linux has mature drivers and
+                    codecs for all of this.
+                </li>
+                <li>
+                    <strong>Industrial gateways.</strong> Devices that
+                    translate between protocols (Modbus, CAN, Ethernet) and
+                    log data to a database are much easier to build on
+                    Linux than on a bare-metal microcontroller.
+                </li>
+                <li>
+                    <strong>Anything with a touchscreen.</strong> Once you
+                    have a graphical user interface, you're in operating
+                    system territory. Linux gives you a windowing system,
+                    input handling, and a huge ecosystem of UI toolkits.
+                </li>
+            </ul>
+            <p>
+                The pattern here is complexity. If your project involves
+                multiple concurrent tasks, networking, or a rich user
+                interface, Linux will save you months of work.
+            </p>
+        </section>
+
+        <section>
+            <h2>A Simple Decision Framework</h2>
+            <p>
+                If you're starting a project and don't know which way to
+                go, ask yourself these questions:
+            </p>
+            <ul>
+                <li>
+                    <strong>Do I need guaranteed microsecond-level
+                    timing?</strong> If yes, start with a microcontroller
+                    or an RTOS.
+                </li>
+                <li>
+                    <strong>Do I need networking, file storage, or a
+                    graphical interface?</strong> If yes, start with
+                    embedded Linux.
+                </li>
+                <li>
+                    <strong>How much memory and power do I have?</strong>
+                    If you're running on a coin cell or have less than a
+                    few hundred kilobytes of RAM, a microcontroller is
+                    the only realistic option.
+                </li>
+                <li>
+                    <strong>How complex is my application logic?</strong>
+                    If you're managing multiple concurrent tasks,
+                    databases, or user accounts, Linux will make your
+                    life easier.
+                </li>
+            </ul>
+            <p>
+                There's no shame in picking one and later switching. Many
+                projects start on a microcontroller and migrate to Linux
+                when the requirements grow. Others start on Linux and
+                offload the timing-critical parts to a small
+                microcontroller.
+            </p>
+        </section>
+
+        <section>
+            <h2>Wrapping Up</h2>
+            <p>
+                Microcontrollers and embedded Linux are both tools. Neither
+                is "better" in the abstract. A microcontroller gives you
+                determinism, low power, and a tiny bill of materials. Linux
+                gives you convenience, networking, and a massive software
+                ecosystem.
+            </p>
+            <p>
+                The right choice depends entirely on what you're building.
+                If you're unsure, start by writing down the three most
+                important requirements for your project. If any of them
+                involve hard real-time deadlines or ultra-low power, lean
+                toward a microcontroller. If any of them involve
+                networking, storage, or a rich user interface, lean toward
+                Linux.
+            </p>
+            <p>
+                And remember: the embedded world is big enough for both.
+                The best engineers know how to use each one where it fits.
+            </p>
+        </section>
+
+        <section>
+            <h2>Links</h2>
+            <ul>
+                <li>
+                    FreeRTOS:
+                    <a href="https://www.freertos.org" target="_blank"
+                        rel="noopener noreferrer">
+                        freertos.org
+                    </a>
+                </li>
+                <li>
+                    Zephyr Project:
+                    <a href="https://www.zephyrproject.org" target="_blank"
+                        rel="noopener noreferrer">
+                        zephyrproject.org
+                    </a>
+                </li>
+                <li>
+                    Linux Kernel Archives:
+                    <a href="https://kernel.org" target="_blank"
+                        rel="noopener noreferrer">
+                        kernel.org
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </main>
+</body>
+
+</html>
