@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sensors and Controls for a Home River Tank | James Bunker</title>
+    <meta name="title" content="Sensors and Controls for a Home River Tank" />
+    <meta name="description"
+        content="A high-level tour of the sensors, actuators, and control logic that keep a home river tank system healthy and stable." />
+    <meta name="author" content="James Bunker" />
+    <meta name="date" content="October 15, 2026" />
+    <meta name="keywords"
+        content="river tank, aquarium, sensors, controls, embedded, automation, water quality" />
+    <link rel="canonical"
+        href="https://geosmin.ca/posts/post11/post_index.html" />
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../post.css" />
+    <script src="../../site_header.js"></script>
+    <link rel="stylesheet" href="../../style.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"
+        sizes="any">
+</head>
+
+<body>
+    <site-header> </site-header>
+    <header class="page-header">
+        <h1>Something Fishy: Sensors and Controls for a River Tank</h1>
+        <p class="subtitle">
+            What goes into keeping a slice of a river alive and stable in
+            your living room.
+        </p>
+        <p class="metadata">
+            October 15, 2026 &nbsp; | &nbsp; Embedded Systems
+        </p>
+    </header>
+
+    <hr />
+
+    <main>
+        <section>
+            <h2>Introduction</h2>
+            <p class="intro">
+                A river tank is a specific kind of aquarium designed to mimic
+                the flow and conditions of a river. Unlike a typical
+                community tank, which is calm and still, a river tank has
+                strong, directional water movement. That changes almost
+                everything about how you control the environment.
+            </p>
+            <p>
+                I am looking at planning a control system for a small river 
+                system, and because of this I have been looking into some
+                of the more technical aspects that would be required.
+                It is important to understand what this entails before
+                'diving' into a project like this.
+            </p>
+            <p>
+                In a home setting, a river tank is usually a modest size:
+                maybe 40 to 120 gallons. It's not a commercial aquaculture
+                system, but it's still a living ecosystem with real
+                biological and physical needs. And like any ecosystem, it
+                can go wrong in ways that are hard to see until it's too
+                late.
+            </p>
+            <p>
+                This article is a high-level tour of the sensors and
+                controls you might find in such a system. No wiring
+                diagrams, no code. Just the ideas and the reasons behind
+                them.
+            </p>
+        </section>
+
+        <section>
+            <h2>Why River Tanks Need Different Controls</h2>
+            <p>
+                In a standard aquarium, the filter is there to move water
+                through media and keep it clear. In a river tank, the flow
+                itself is part of the habitat. The current shapes the
+                behavior of the fish, distributes oxygen and nutrients,
+                and carries waste to the filter.
+            </p>
+            <p>
+                That means the flow can't just be "on" or "off." It needs
+                to be consistent, and sometimes it needs to change based on
+                conditions. If the flow stops, the biological filter can
+                suffocate. If the flow is too strong, fish exhaust
+                themselves. If it's too weak, waste accumulates in dead
+                spots.
+            </p>
+            <p>
+                Temperature is also more critical in a river tank. Many
+                river species are sensitive to swings, and the extra
+                surface agitation from the flow increases evaporation,
+                which can cool the water faster than you'd expect.
+            </p>
+            <p>
+                So the controls in a river tank aren't just about keeping
+                things alive. They're about keeping things stable.
+            </p>
+        </section>
+
+        <section>
+            <h2>The Core Sensors</h2>
+            <p>
+                Most home river tank controllers rely on a handful of
+                sensors. These are the eyes and ears of the system.
+            </p>
+            <ul>
+                <li>
+                    <strong>Temperature sensor.</strong> Usually a
+                    thermistor or a digital sensor like a DS18B20. It tells
+                    you the water temperature, which drives the heater
+                    and, in some setups, the fan or chiller. A single
+                    sensor is often enough, but some systems use two to
+                    catch failures.
+                </li>
+                <li>
+                    <strong>Water level sensor.</strong> This can be a
+                    float switch, a conductivity probe, or an ultrasonic
+                    sensor. It tells you if the water is too low, which
+                    might indicate a leak or excessive evaporation, or too
+                    high, which might indicate a blocked drain or a
+                    stuck top-off valve.
+                </li>
+                <li>
+                    <strong>Flow sensor.</strong> A paddlewheel or
+                    magnetic flow meter in the return line measures how
+                    much water is actually moving. This is the single
+                    most important sensor in a river tank, because it
+                    directly measures the thing that makes the tank a
+                    river tank.
+                </li>
+                <li>
+                    <strong>pH sensor.</strong> A glass electrode probe
+                    measures acidity. In a river tank, pH stability is
+                    crucial. A sudden drop can indicate a crash in the
+                    biological filter or a problem with the water source.
+                </li>
+                <li>
+                    <strong>Dissolved oxygen sensor.</strong> Less common
+                    in home setups, but useful in heavily stocked or
+                    high-temperature tanks. It measures how much oxygen
+                    is available to the fish.
+                </li>
+            </ul>
+            <p>
+                You don't need all of these. A basic river tank might only
+                have temperature and water level. But the more you add,
+                the more you can automate, and the more warning you get
+                before something goes wrong.
+            </p>
+        </section>
+
+        <section>
+            <h2>The Actuators</h2>
+            <p>
+                Sensors tell you what's happening. Actuators let you do
+                something about it. In a home river tank, the main
+                actuators are:
+            </p>
+            <ul>
+                <li>
+                    <strong>Heater.</strong> Usually a submersible
+                    resistive element controlled by a relay or a solid-state
+                    relay. The controller turns it on when the temperature
+                    drops below a setpoint and off when it rises above it.
+                </li>
+                <li>
+                    <strong>Pumps.</strong> The main circulation pump and
+                    any supplemental powerheads. In a river tank, the
+                    return pump is often a variable-speed pump, so the
+                    controller can adjust flow without turning it off
+                    entirely.
+                </li>
+                <li>
+                    <strong>Top-off valve.</strong> A solenoid valve that
+                    adds water from a reservoir when the level drops. This
+                    compensates for evaporation, which is significant in a
+                    high-flow tank.
+                </li>
+                <li>
+                    <strong>Drain valve.</strong> Less common, but some
+                    systems have a solenoid that opens to drain water
+                    during a water change or if the level gets too high.
+                </li>
+                <li>
+                    <strong>Lights.</strong> Not strictly a control for
+                    water quality, but lighting affects algae growth and
+                    fish behavior. A simple timer or a dimmable driver
+                    gives you control over the photoperiod.
+                </li>
+                <li>
+                    <strong>Cooling fan.</strong> In warm climates or
+                    during summer, a fan blowing across the water surface
+                    can help keep the temperature down. It's controlled
+                    the same way as a heater, just in reverse.
+                </li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>How the Control Logic Works</h2>
+            <p>
+                At its simplest, a river tank controller is a set of
+                rules. If temperature is below 76°F, turn on the heater.
+                If temperature is above 78°F, turn it off. If water level
+                is low, open the top-off valve for a few seconds. If flow
+                is below a threshold, sound an alarm.
+            </p>
+            <p>
+                But river tanks benefit from a bit more nuance. Here are
+                a few examples of control logic you might see:
+            </p>
+            <ul>
+                <li>
+                    <strong>Hysteresis.</strong> Instead of a single
+                    setpoint, you use a range. The heater turns on at
+                    75°F and off at 77°F. This prevents rapid cycling,
+                    which wears out relays and stresses fish.
+                </li>
+                <li>
+                    <strong>Ramp-up and ramp-down.</strong> Instead of
+                    turning the pump on at full speed, the controller
+                    gradually increases power over a few seconds. This
+                    mimics natural flow changes and is easier on the
+                    pump.
+                </li>
+                <li>
+                    <strong>Interlocks.</strong> The top-off valve won't
+                    open if the flow sensor says the main pump is off.
+                    This prevents adding water to a tank that isn't
+                    circulating, which could overflow.
+                </li>
+                <li>
+                    <strong>Alerts and logging.</strong> If any sensor
+                    reads outside its expected range for more than a few
+                    minutes, the controller sends a notification. It also
+                    logs data so you can see trends over time.
+                </li>
+            </ul>
+            <p>
+                None of this is complicated on its own. The challenge is
+                making it all work together reliably, day after day,
+                without needing constant attention.
+            </p>
+        </section>
+
+        <section>
+            <h2>What You Actually Need vs. What's Nice to Have</h2>
+            <p>
+                If you're setting up a home river tank, it's easy to get
+                carried away with sensors and automation. Here's a
+                practical breakdown:
+            </p>
+            <p>
+                <strong>Essential:</strong>
+            </p>
+            <ul>
+                <li>Temperature sensor and heater control</li>
+                <li>Water level sensor with top-off control</li>
+                <li>Flow sensor with alarm</li>
+                <li>Timer for lights</li>
+            </ul>
+            <p>
+                <strong>Nice to have:</strong>
+            </p>
+            <ul>
+                <li>pH monitoring</li>
+                <li>Dissolved oxygen monitoring</li>
+                <li>Variable-speed pump control</li>
+                <li>Remote monitoring and logging</li>
+                <li>Cooling fan control</li>
+            </ul>
+            <p>
+                The essentials will keep your tank alive. The nice-to-haves
+                will make it easier to manage and give you more insight
+                into what's happening. Start with the essentials, and add
+                the rest as you gain confidence.
+            </p>
+        </section>
+
+        <section>
+            <h2>Common Failure Modes</h2>
+            <p>
+                Every sensor and actuator can fail. A good controller
+                anticipates this and fails safe.
+            </p>
+            <ul>
+                <li>
+                    <strong>Stuck heater.</strong> If the heater relay
+                    welds shut, the heater stays on. A secondary
+                    temperature sensor or a thermal fuse can cut power
+                    before the tank cooks.
+                </li>
+                <li>
+                    <strong>Clogged flow sensor.</strong> Debris can jam
+                    a paddlewheel. If the controller trusts the sensor
+                    blindly, it might think flow is fine when it isn't.
+                    Regular cleaning and a backup flow estimate (based on
+                    pump power draw) can help.
+                </li>
+                <li>
+                    <strong>Top-off valve stuck open.</strong> This is
+                    the classic flood scenario. A mechanical float valve
+                    as a backup, or a maximum-on-time limit in the
+                    controller, prevents it.
+                </li>
+                <li>
+                    <strong>Sensor drift.</strong> pH probes and
+                    dissolved oxygen sensors need calibration. If you
+                    don't calibrate them, they'll slowly lie to you.
+                </li>
+            </ul>
+            <p>
+                The theme here is redundancy. For anything that can
+                cause catastrophic damage, have a second line of defense.
+            </p>
+        </section>
+
+        <section>
+            <h2>Wrapping Up</h2>
+            <p>
+                A home river tank is a small ecosystem with real needs.
+                The sensors and controls you choose are what let you meet
+                those needs consistently, without standing over the tank
+                with a test kit every day.
+            </p>
+            <p>
+                You don't need a laboratory-grade system. A few
+                well-chosen sensors, a handful of actuators, and some
+                sensible control logic will cover 95% of what a home
+                river tank requires. The rest is refinement.
+            </p>
+            <p>
+                And if you're an embedded systems person, a river tank is
+                a great project. It's a real application with real
+                constraints, and it will teach you a lot about
+                reliability, failure modes, and the difference between a
+                demo and something that has to work every day.
+            </p>
+        </section>
+
+        <section>
+            <h2>Links</h2>
+            <ul>
+                <li>
+                    The Planted Tank:
+                    <a href="https://www.theplantedtank.co.uk" target="_blank"
+                        rel="noopener noreferrer">
+                        theplantedtank.co.uk
+                    </a>
+                </li>
+                <li>
+                    Reef2Reef (controller discussions):
+                    <a href="https://www.reef2reef.com" target="_blank"
+                        rel="noopener noreferrer">
+                        reef2reef.com
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </main>
+</body>
+
+</html>
